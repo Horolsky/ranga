@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS [MetaKeys] (
     [ID] INTEGER PRIMARY KEY AUTOINCREMENT,
     [LLID] STRING NOT NULL UNIQUE, --Low-level ID
     [Label] STRING NOT NULL UNIQUE,
-    [Type] STRING NOT NULL,
+    [ValueType] STRING NOT NULL,
     [Descr] STRING 
 );
 
@@ -30,3 +30,16 @@ CREATE TABLE IF NOT EXISTS [MetaMap] (
     FOREIGN KEY(MetaDataID) REFERENCES MetaData(ID)
     ON DELETE NO ACTION
 );
+
+--metadata + key info
+CREATE VIEW v_MetaData AS 
+SELECT 
+    MetaData.ID as ID,
+    MetaKeys.ID as KeyID,
+    LLID,
+    Label,
+    valuetype as type,
+    descr,
+    value
+FROM MetaKeys INNER JOIN MetaData 
+    ON MetaData.KeyID = MetaKeys.ID;
