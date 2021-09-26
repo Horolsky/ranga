@@ -75,10 +75,10 @@ VALUES
 
 -- list fields in concat form 
 SELECT
-fileid,
-path,
-SUM(CASE WHEN v_MetaData.LLID = "auth" THEN 1 ELSE 0 END) as authors_cnt,
-SUM(CASE WHEN v_MetaData.LLID = "cmps" THEN 1 ELSE 0 END) as composers_cnt,
+FileID,
+Path,
+SUM(CASE WHEN v_MetaData.LLID = "auth" THEN 1 ELSE 0 END) as auth_n,
+SUM(CASE WHEN v_MetaData.LLID = "cmps" THEN 1 ELSE 0 END) as cmps_n,
 GROUP_CONCAT(CASE WHEN v_MetaData.LLID = "auth" THEN v_MetaData.Value ELSE NULL END) as authors,
 GROUP_CONCAT(CASE WHEN v_MetaData.LLID = "cmps" THEN v_MetaData.Value ELSE NULL END) as composers
 FROM
