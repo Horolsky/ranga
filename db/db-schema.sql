@@ -43,3 +43,13 @@ SELECT
     value
 FROM MetaKeys INNER JOIN MetaData 
     ON MetaData.KeyID = MetaKeys.ID;
+
+-- view MetaMap + path
+CREATE VIEW v_MetaMap 
+AS 
+SELECT
+    MetaMap.FileID AS FileID,
+    MetaMap.MetaDataID AS MetaDataID,
+    Path
+FROM Files
+    INNER JOIN MetaMap ON MetaMap.FileID = Files.ID;
