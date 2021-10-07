@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS [Files] (
     [ID] INTEGER PRIMARY KEY AUTOINCREMENT,
     [Path] STRING NOT NULL UNIQUE,
-    [Modified] INTEGER NOT NULL
+    [Modified] REAL NOT NULL
 );
 
 --file metadata keys
