@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS [MetaMap] (
 );
 
 --metadata + key info
-CREATE VIEW v_MetaData AS 
+CREATE VIEW IF NOT EXISTS v_MetaData AS 
 SELECT 
     MetaData.ID as ID,
     MetaKeys.ID as KeyID,
@@ -45,7 +45,7 @@ FROM MetaKeys INNER JOIN MetaData
     ON MetaData.KeyID = MetaKeys.ID;
 
 -- view MetaMap + path
-CREATE VIEW v_MetaMap 
+CREATE VIEW IF NOT EXISTS v_MetaMap 
 AS 
 SELECT
     MetaMap.FileID AS FileID,
