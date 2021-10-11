@@ -42,3 +42,7 @@ class DataBase:
         sql_upd_files = update_query('Files')        
         self.__cursor.executemany(sql_upd_files, files) 
         self.__db.commit()
+
+    def get_files(self) -> List[Tuple[str, float]]:
+        self.__cursor.execute("SELECT Path, Modified from Files;")
+        return self.__cursor.fetchall()
