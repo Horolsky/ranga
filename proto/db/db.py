@@ -46,3 +46,6 @@ class DataBase:
     def get_files(self) -> List[Tuple[str, float]]:
         self.__cursor.execute("SELECT Path, Modified from Files;")
         return self.__cursor.fetchall()
+    def remove_files(self, paths: List[str]) -> None:
+        self.__cursor.executemany("DELETE FROM Files WHERE Path IN (?);", paths)
+        self.__db.commit()
