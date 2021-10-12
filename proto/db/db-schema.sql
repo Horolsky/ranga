@@ -43,3 +43,9 @@ SELECT
 FROM
     meta_keys
     INNER JOIN meta_values ON meta_values.key_id = meta_keys.id;
+
+/* directories to watch recursively */
+CREATE TABLE IF NOT EXISTS [dirs] (
+    [path] STRING PRIMARY KEY,
+    [modified] REAL NOT NULL
+);
