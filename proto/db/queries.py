@@ -1,25 +1,27 @@
 UPD_KEYS = {
-    "Files": ['Path', 'Modified'],
-    "MetaKeys": ['LLID', 'Label', 'ValueType', 'Descr'],
-    "MetaData": ['KeyID', 'Value'],
-    "MetaMap": ['FileID', 'MetaDataID']
+    "files": ['path', 'modified'],
+    "meta_keys": ['llid', 'label', 'type', 'descr'],
+    "meta_values": ['key_id', 'value'],
+    "meta_map": ['file_id', 'mvalue_id']
 }
 
 #ON CONFLICT clause
 UPD_CONFL = {
-    "Files": """
-    ON CONFLICT(Path) DO UPDATE SET
-    Modified=excluded.Modified
-    WHERE excluded.Modified>Files.Modified
+    "files": """
+    ON CONFLICT(path) DO UPDATE SET
+    modified = excluded.modified
+    WHERE excluded.modified > files.modified
     """,
-    "MetaKeys": """
-    ON CONFLICT(LLID) DO UPDATE SET 
+
+    "meta_keys": """
+    ON CONFLICT(llid) DO UPDATE SET 
     label = excluded.label,
-    valuetype = excluded.valuetype,
+    type = excluded.type,
     descr = excluded.descr
     """,
-    "MetaData": "",
-    "MetaMap": ""
+    
+    "meta_values": "",
+    "meta_map": ""
 }
 
 def update_query(table:str) -> str:

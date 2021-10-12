@@ -36,17 +36,17 @@ class DataBase:
 
     def update_files(self, files: List[Tuple[str, float]]):
         """
-        ipsert Files table
+        upsert files table
         files: (path, modified)
         """    
-        sql_upd_files = update_query('Files')        
+        sql_upd_files = update_query('files')        
         self.__cursor.executemany(sql_upd_files, files) 
         self.__db.commit()
 
     def get_files(self) -> List[Tuple[str, float]]:
-        self.__cursor.execute("SELECT Path, Modified from Files;")
+        self.__cursor.execute("SELECT path, modified from files;")
         return self.__cursor.fetchall()
         
     def remove_files(self, paths: List[str]) -> None:
-        self.__cursor.executemany("DELETE FROM Files WHERE Path IN (?);", paths)
+        self.__cursor.executemany("DELETE FROM files WHERE path IN (?);", paths)
         self.__db.commit()
