@@ -1,0 +1,19 @@
+formats:
+  - name: MP4
+    fullname: "MPEG-4"
+    suffixes:
+      - mp4
+      - m4a
+      - m4p
+      - m4b
+      - m4r
+      - m4v
+  - name: QTFF
+    fullname: "QuickTime File Format"
+    suffixes:
+      - mov
+      - qt
+
+local:
+  database: $HOME/.ffindex.db
+  config: $HOME/.config/ffindex/ffindex.conf
