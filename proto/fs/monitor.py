@@ -1,18 +1,9 @@
-#!/usr/bin/env python3
+from os.path import isfile, getmtime, join as joinpath
+from os import walk, listdir
+from typing import List, Tuple
 
-import sys
-from os.path import isfile, abspath, getmtime, join as joinpath
-from os import walk, scandir, listdir
-from typing import List, Tuple, Callable
-
-from PyQt5.QtCore import QCoreApplication
-from pathlib import Path
-
-from monitor.watchdog import WatchDog
-from db.db import DataBase
-
-HOME_DIR = str(Path.home())
-VIDEOS_DIR = F"{HOME_DIR}/Videos"
+from .watchdog import WatchDog
+from ..db.manager import DbManager
 
 class Monitor:
     
@@ -42,17 +33,19 @@ class Monitor:
 
 
         
-    def __init__(self) -> None:
-
-        dirs, files = Monitor.walk_dir(VIDEOS_DIR)
-        paths = [VIDEOS_DIR] + [path for  path, _ in dirs] #+ [path for  path, _ in files]
+    def __init__(self, root: str, db: DbManager) -> None:
+        print("monitor init")
+        dirs, files = Monitor.walk_dir(root)
+        paths = [root] + [path for  path, _ in dirs] #+ [path for  path, _ in files]
         
-        self.db = DataBase()
+        self.root = root
+        self.paths = paths
+        self.db = db
         self.watchdog = WatchDog(paths, self.on_upd)
         
-        to_delete = [ (path,) for path, _ in set(self.db.get_files()).difference(set(files))]
+        files_to_delete = [ (path,) for path, _ in set(self.db.get_files()).difference(set(files))]
         
-        self.db.remove_files(to_delete)
+        self.db.remove_files(files_to_delete)
         self.db.update_files(files)
         
     def on_upd(self, dirpath: str) -> None:
@@ -64,21 +57,6 @@ class Monitor:
         
         self.db.remove_files(to_delete)
         self.db.update_files(files)
-
-
-INIT_MSG = \
-"""
-PAM file monitor proto
-usage: pass folder path to watch
-"""
-
-def main() -> int:
     
-    if len(sys.argv) == 1:
-        print(INIT_MSG)
-        exit(0)
-    
-    qt_app = QCoreApplication(sys.argv)
-    m = Monitor()
-
-    return qt_app.exec_()
+    def __del__(self):
+        print("monitor shutdown")

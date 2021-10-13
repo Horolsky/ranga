@@ -12,7 +12,7 @@ DB_PATH = f'{HOME_DIR}/.pam-index.db' #TODO move this to yml config
 DB_SCHEMA = f'{SCRIPT_DIR}/db-schema.sql'
 
 
-class DataBase:
+class DbManager:
     __db: Connection = None
     __cursor: Cursor = None
     
