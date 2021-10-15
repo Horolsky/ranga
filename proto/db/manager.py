@@ -4,7 +4,7 @@ from sqlite3.dbapi2 import Connection, Cursor
 from typing import List, Tuple
 from pathlib import Path
 
-from .queries import update_query
+import proto.db.queries as queries
 
 SCRIPT_DIR = dirname(realpath(__file__))
 HOME_DIR = str(Path.home())
@@ -39,14 +39,25 @@ class DbManager:
         upsert files table
         files: (path, modified)
         """    
-        sql_upd_files = update_query('files')        
+        sql_upd_files = queries.insert('files') + queries.conflict_clause('files') + queries.close()
         self.__cursor.executemany(sql_upd_files, files) 
         self.__db.commit()
 
-    def get_files(self) -> List[Tuple[str, float]]:
-        self.__cursor.execute("SELECT path, modified from files;")
+    def get_all_files(self) -> List[Tuple[str, float]]:
+        self.__cursor.execute(queries.select('files') + queries.close()) 
+        return self.__cursor.fetchall()
+
+    def get_files_in_dir(self, dirpath: str) -> List[Tuple[str, float]]:
+        sql = queries.select('files') + queries.files_where_stmt("directory") + queries.close()
+        self.__cursor.execute(sql, (dirpath,))
+        return self.__cursor.fetchall()
+
+    def get_files_by_suffix(self, sfx: str) -> List[Tuple[str, float]]:
+        sql = queries.select('files') + queries.files_where_stmt("suffix") + queries.close()
+        self.__cursor.execute(sql,  (f"%.{sfx}",))
         return self.__cursor.fetchall()
         
     def remove_files(self, paths: List[str]) -> None:
-        self.__cursor.executemany("DELETE FROM files WHERE path IN (?);", paths)
+        sql = queries.delete_files() + queries.close()
+        self.__cursor.executemany(sql, paths)
         self.__db.commit()

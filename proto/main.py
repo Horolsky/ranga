@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from genericpath import isdir
+from posixpath import abspath
 import sys
 from PyQt5.QtCore import QCoreApplication
 from pathlib import Path
@@ -8,7 +10,7 @@ from proto.db.manager import DbManager
 from proto.fs.monitor import Monitor
 
 HOME_DIR = str(Path.home())
-VIDEOS_DIR = F"{HOME_DIR}/Videos"
+VIDEOS_DIR = F"{HOME_DIR}/pam_demo"
 
 
 INIT_MSG = \
@@ -26,7 +28,10 @@ def main() -> int:
     qt_app = QCoreApplication(sys.argv)
 
     db = DbManager()
-    m = Monitor(VIDEOS_DIR, db)
+    
+    # path = VIDEOS_DIR
+    path = abspath(sys.argv[1]) if isdir(sys.argv[1]) else VIDEOS_DIR
+    m = Monitor(path, db)
 
     return qt_app.exec_()
 
