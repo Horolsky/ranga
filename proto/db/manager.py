@@ -3,7 +3,7 @@ from os.path import dirname, realpath
 from sqlite3.dbapi2 import Connection, Cursor
 from typing import List, Tuple
 from pathlib import Path
-
+from functools import reduce
 import proto.db.queries as queries
 
 SCRIPT_DIR = dirname(realpath(__file__))
@@ -11,6 +11,12 @@ HOME_DIR = str(Path.home())
 DB_PATH = f'{HOME_DIR}/.pam-index.db' #TODO move this to yml config
 DB_SCHEMA = f'{SCRIPT_DIR}/db-schema.sql'
 
+
+TYPEMAP = {
+    int: "INTEGER",
+    float: "REAL",
+    str: "STRING"
+}
 
 class DbManager:
     __db: Connection = None
@@ -60,4 +66,23 @@ class DbManager:
     def remove_files(self, paths: List[str]) -> None:
         sql = queries.delete_files() + queries.close()
         self.__cursor.executemany(sql, paths)
+        self.__db.commit()
+    
+    def update_meta(self, datalist: List[dict]):
+        """
+        upsert meta keys, malues and file mapping
+        """    
+
+        #TODO: better mtype retrieving
+        keytypemap = lambda dct: {k: (k, TYPEMAP.get(type(v)), None) for k, v in dct.items()}
+        keys = {}
+        for entry in datalist:
+            keys.update(keytypemap(entry))
+
+        keys = keys.values()
+        sql_upd_keys = queries.insert('meta_keys') + queries.conflict_clause('meta_keys') + queries.close()
+        self.__cursor.executemany(sql_upd_keys, keys) 
+        
+        #TODO meta values
+
         self.__db.commit()

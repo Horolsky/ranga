@@ -1,7 +1,7 @@
 UPD_KEYS = {
     "files": ['path', 'parent', 'modified', 'is_dir'],
-    "meta_keys": ['llid', 'label', 'type', 'descr'],
-    "meta_values": ['key_id', 'value'],
+    "meta_keys": ['mkey', 'mtype', 'descr'],
+    "meta_values": ['key_id', 'mvalue'],
     "meta_map": ['file_id', 'mvalue_id']
 }
 
@@ -14,9 +14,8 @@ UPD_CONFL = {
     """,
 
     "meta_keys": """
-    ON CONFLICT(llid) DO UPDATE SET 
-    label = excluded.label,
-    type = excluded.type,
+    ON CONFLICT(mkey) DO UPDATE SET 
+    mtype = excluded.mtype,
     descr = excluded.descr
     """,
     

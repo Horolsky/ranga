@@ -5,8 +5,10 @@ from typing import List
 from PyQt5.QtCore import QFileSystemWatcher
 
 from ..db.manager import DbManager
+from ..metadata.dumper import get_data
 
-
+PATH, PARENT, MODIFIED, IS_DIR = 0,1,2,3
+EMPTY_RECORD = ("",0,0,0)
 
 class Monitor:
     
@@ -46,8 +48,7 @@ class Monitor:
     def on_upd(self, node: str, recursive: bool = False) -> None:
         print(f"update dir: {node}")
 
-        PATH, PARENT, MODIFIED, IS_DIR = 0,1,2,3
-        EMPTY_RECORD = ("",0,0,0)
+        
 
         local_files = { file[PATH]: file for file in Monitor.walk_dir(node, recursive) }
         db_records = { record[PATH]: record for record in self.db.get_files_in_dir(node) }
@@ -58,10 +59,19 @@ class Monitor:
 
         if to_remove: self.db.remove_files(to_remove)
         if to_update: self.db.update_files(to_update)
+        self.upd_meta(to_update)
+
         if isdir(node): self.watchdog.addPath(node)
         if to_watch: self.watchdog.addPaths(to_watch)
         for path in to_watch:
             self.on_upd(path, True)
     
+    #TODO: use threadpool for this
+    def upd_meta(self, files: List[tuple]) -> None:
+        data = []
+        for file in files:
+            data.append(get_data(file[PATH]))
+        self.db.update_meta(data)
+
     def __del__(self):
         print(f"shutdown monitor on {self.root}")
