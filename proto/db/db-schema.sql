@@ -54,6 +54,16 @@ ON [meta_values] (mvalue); -- TODO test performance for weak typing
 CREATE INDEX IF NOT EXISTS idx_mvalues_keys 
 ON [meta_values] (key_id);
 
+/* put key_id as mkey string, replace with id */
+CREATE TRIGGER IF NOT EXISTS [on_mvalues_insert] 
+AFTER INSERT ON [meta_values]
+BEGIN
+    UPDATE [meta_values]
+    SET
+    key_id = (SELECT id FROM meta_keys WHERE mkey = NEW.key_id LIMIT 1)
+    WHERE id = NEW.id;
+END;
+
 /* file to metadata map (M:M) */
 CREATE TABLE IF NOT EXISTS [meta_map] (
     [file_id] INTEGER,
