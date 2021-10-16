@@ -7,6 +7,7 @@ from PyQt5.QtCore import QFileSystemWatcher
 from ..db.manager import DbManager
 from ..metadata.dumper import get_data
 
+# tuple indexation for file record
 PATH, PARENT, MODIFIED, IS_DIR = 0,1,2,3
 EMPTY_RECORD = ("",0,0,0)
 
@@ -14,8 +15,10 @@ class Monitor:
     
     @staticmethod
     def walk_dir( directory: str, recursive: bool) -> List[tuple]:
+
         if not isdir(directory): 
             return []
+            
         files = [(directory, None, getmtime(directory), 1)]
 
         if not recursive:
@@ -24,7 +27,6 @@ class Monitor:
                 path = joinpath(directory, entry)
                 files.append((path, directory, getmtime(path), is_dir(path)))
         else:
-
             for root, dirnames, filenames in walk(directory, topdown=False):
                 for dname in dirnames:
                     dirpath = joinpath(root, dname)
@@ -45,12 +47,10 @@ class Monitor:
         self.root = root
         self.on_upd(root, True)
         
-    def on_upd(self, node: str, recursive: bool = False) -> None:
+    def on_upd(self, node: str, fullupd: bool = False) -> None:
         print(f"update dir: {node}")
 
-        
-
-        local_files = { file[PATH]: file for file in Monitor.walk_dir(node, recursive) }
+        local_files = { file[PATH]: file for file in Monitor.walk_dir(node, fullupd) }
         db_records = { record[PATH]: record for record in self.db.get_files_in_dir(node) }
 
         to_remove = [ (path,) for path in set(db_records) - set(local_files) ]
@@ -58,8 +58,9 @@ class Monitor:
         to_watch = [ path for path in local_files if path not in db_records and local_files[path][IS_DIR] and path is not node ]
 
         if to_remove: self.db.remove_files(to_remove)
-        if to_update: self.db.update_files(to_update)
-        self.upd_meta(to_update)
+        if to_update: 
+            self.db.update_files(to_update)
+            self.upd_meta(to_update)
 
         if isdir(node): self.watchdog.addPath(node)
         if to_watch: self.watchdog.addPaths(to_watch)
@@ -68,9 +69,7 @@ class Monitor:
     
     #TODO: use threadpool for this
     def upd_meta(self, files: List[tuple]) -> None:
-        data = []
-        for file in files:
-            data.append(get_data(file[PATH]))
+        data = [ get_data(file[PATH]) for file in files ]
         self.db.update_meta(data)
 
     def __del__(self):
