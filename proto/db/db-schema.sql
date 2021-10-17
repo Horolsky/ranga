@@ -1,5 +1,14 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS [last_rows] (
+    id INTEGER PRIMARY KEY,
+    file_id INTEGER,
+    mkey_id INTEGER,
+    mvalue_id INTEGER,
+    mmap_rowid INTEGER
+);
+INSERT OR IGNORE INTO last_rows(id) VALUES (0);
+
 /* file registry */
 CREATE TABLE IF NOT EXISTS [files] (
     [id] INTEGER PRIMARY KEY,
@@ -28,6 +37,15 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
+CREATE TRIGGER IF NOT EXISTS [mkeys_lastrow] 
+AFTER INSERT ON [files]
+BEGIN
+    UPDATE [last_rows]
+    SET
+    file_id = NEW.id
+    WHERE id = 0;
+END;
+
 /* file metadata keys */
 CREATE TABLE IF NOT EXISTS [meta_keys] (
     [id] INTEGER PRIMARY KEY,
@@ -38,6 +56,15 @@ CREATE TABLE IF NOT EXISTS [meta_keys] (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mkeys 
 ON [meta_keys] (mkey);
+
+CREATE TRIGGER IF NOT EXISTS [mkeys_lastrow] 
+AFTER INSERT ON [meta_keys]
+BEGIN
+    UPDATE [last_rows]
+    SET
+    mkey_id = NEW.id
+    WHERE id = 0;
+END;
 
 /* file metadata store */
 CREATE TABLE IF NOT EXISTS [meta_values] (
@@ -91,6 +118,15 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
+CREATE TRIGGER IF NOT EXISTS [mvalues_lastrow] 
+AFTER INSERT ON [meta_values]
+BEGIN
+    UPDATE [last_rows]
+    SET
+    mvalue_id = NEW.id
+    WHERE id = 0;
+END;
+
 /* file to metadata map (M:M) */
 CREATE TABLE IF NOT EXISTS [meta_map] (
     [file_id] INTEGER,
@@ -109,13 +145,23 @@ ON [meta_map] (mvalue_id);
 /* put key_id as mkey string, replace with id */
 CREATE TRIGGER IF NOT EXISTS [mmap_find_file] 
 AFTER INSERT ON [meta_map]
+    WHEN TYPEOF(NEW.file_id) <> 'INTEGER' AND NEW.mvalue_id = "LASTROW"
 BEGIN
     UPDATE [meta_map]
     SET
-    file_id = (SELECT id FROM files WHERE path = NEW.file_id LIMIT 1)
+    file_id = (SELECT id FROM files WHERE path = NEW.file_id LIMIT 1),
+    mvalue_id = (SELECT mvalue_id from last_rows WHERE id = 0 LIMIT 1)
     WHERE rowid = NEW.rowid;
 END;
 
+CREATE TRIGGER IF NOT EXISTS [mmap_lastrow] 
+AFTER INSERT ON [meta_map]
+BEGIN
+    UPDATE [last_rows]
+    SET
+    mmap_rowid = NEW.rowid
+    WHERE id = 0;
+END;
 
 /* metadata + key info */
 CREATE VIEW IF NOT EXISTS meta_data AS
