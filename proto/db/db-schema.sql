@@ -30,6 +30,7 @@ ON [files] (parent);
 /* put parent as path, replace with id */
 CREATE TRIGGER IF NOT EXISTS [files_find_parent] 
 AFTER INSERT ON [files]
+    WHEN TYPEOF(NEW.parent) <> 'INTEGER'
 BEGIN
     UPDATE [files]
     SET
@@ -111,10 +112,11 @@ END;
 /* put key_id as mkey string, replace with id */
 CREATE TRIGGER IF NOT EXISTS [mvalues_find_key] 
 AFTER INSERT ON [meta_values]
+    WHEN TYPEOF(NEW.mkey_id) <> 'INTEGER'
 BEGIN
     UPDATE [meta_values]
     SET
-    mkey_id = (SELECT id FROM meta_keys WHERE mkey_id = NEW.mkey_id LIMIT 1)
+    mkey_id = (SELECT id FROM meta_keys WHERE mkey = NEW.mkey_id LIMIT 1)
     WHERE id = NEW.id;
 END;
 
