@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS [meta_values] (
     FOREIGN KEY(mkey_id) REFERENCES meta_keys(id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_mvalues 
+CREATE INDEX IF NOT EXISTS idx_mvalues 
 ON [meta_values] (mvalue); -- TODO test performance for weak typing
 
 CREATE INDEX IF NOT EXISTS idx_mvalues_keys 
