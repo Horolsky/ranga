@@ -105,6 +105,18 @@ ON [meta_map] (file_id);
 CREATE INDEX IF NOT EXISTS idx_map_values 
 ON [meta_map] (mvalue_id);
 
+
+/* put key_id as mkey string, replace with id */
+CREATE TRIGGER IF NOT EXISTS [mmap_find_file] 
+AFTER INSERT ON [meta_map]
+BEGIN
+    UPDATE [meta_map]
+    SET
+    file_id = (SELECT id FROM files WHERE path = NEW.file_id LIMIT 1)
+    WHERE rowid = NEW.rowid;
+END;
+
+
 /* metadata + key info */
 CREATE VIEW IF NOT EXISTS meta_data AS
 SELECT
