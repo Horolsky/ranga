@@ -19,7 +19,7 @@ ON [files] (parent);
 
 
 /* put parent as path, replace with id */
-CREATE TRIGGER IF NOT EXISTS [on_files_update] 
+CREATE TRIGGER IF NOT EXISTS [files_find_parent] 
 AFTER INSERT ON [files]
 BEGIN
     UPDATE [files]
@@ -30,10 +30,9 @@ END;
 
 /* file metadata keys */
 CREATE TABLE IF NOT EXISTS [meta_keys] (
-    [id] INTEGER PRIMARY KEY AUTOINCREMENT,
-    [mkey] STRING NOT NULL UNIQUE,
-    [mtype] STRING NOT NULL,
-    -- meta value type
+    [id] INTEGER PRIMARY KEY,
+    [mkey] STRING UNIQUE,
+    [mtype] STRING,
     [descr] STRING
 );
 
@@ -42,25 +41,53 @@ ON [meta_keys] (mkey);
 
 /* file metadata store */
 CREATE TABLE IF NOT EXISTS [meta_values] (
-    [id] INTEGER PRIMARY KEY AUTOINCREMENT,
-    [key_id] INTEGER,
-    [mvalue], -- weak typing
-    FOREIGN KEY(key_id) REFERENCES meta_keys(id) ON DELETE CASCADE
+    [id] INTEGER PRIMARY KEY,
+    [mkey_id] INTEGER,
+    [mvalue] ANY, -- weak typing
+    FOREIGN KEY(mkey_id) REFERENCES meta_keys(id) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mvalues 
 ON [meta_values] (mvalue); -- TODO test performance for weak typing
 
 CREATE INDEX IF NOT EXISTS idx_mvalues_keys 
-ON [meta_values] (key_id);
+ON [meta_values] (mkey_id);
+
+/* ignore if record exists */
+CREATE TRIGGER IF NOT EXISTS [mvalues_ignore_dupes] 
+BEFORE INSERT ON [meta_values]
+WHEN 
+    (SELECT count(*) 
+    FROM meta_values 
+    JOIN meta_keys
+    ON meta_keys.id = meta_values.mkey_id
+    -- mkey_id stores mkey here
+    WHERE meta_keys.mkey = NEW.mkey_id AND meta_values.mvalue = NEW.mvalue)
+    <> 0
+BEGIN
+    SELECT(RAISE(IGNORE));
+END;
+
+/* add key if not exists */
+CREATE TRIGGER IF NOT EXISTS [mvalues_add_key] 
+BEFORE INSERT ON [meta_values]
+WHEN 
+    (SELECT count(*) 
+    FROM meta_keys 
+    WHERE NEW.mkey_id IN (meta_keys.id, meta_keys.mkey))
+    = 0
+BEGIN
+    INSERT INTO meta_keys(mkey) VALUES
+    (NEW.mkey_id);
+END;
 
 /* put key_id as mkey string, replace with id */
-CREATE TRIGGER IF NOT EXISTS [on_mvalues_insert] 
+CREATE TRIGGER IF NOT EXISTS [mvalues_find_key] 
 AFTER INSERT ON [meta_values]
 BEGIN
     UPDATE [meta_values]
     SET
-    key_id = (SELECT id FROM meta_keys WHERE mkey = NEW.key_id LIMIT 1)
+    mkey_id = (SELECT id FROM meta_keys WHERE mkey_id = NEW.mkey_id LIMIT 1)
     WHERE id = NEW.id;
 END;
 
@@ -87,5 +114,5 @@ SELECT
     descr
 FROM
     meta_keys
-    JOIN meta_values ON meta_values.key_id = meta_keys.id;
+    JOIN meta_values ON meta_values.mkey_id = meta_keys.id;
 
