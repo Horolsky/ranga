@@ -72,17 +72,15 @@ class DbManager:
         """
         upsert meta keys, malues and file mapping
         """    
-
-        #TODO: better mtype retrieving
-        keytypemap = lambda dct: {k: (k, TYPEMAP.get(type(v)), None) for k, v in dct.items()}
-        keys = {}
-        for entry in datalist:
-            keys.update(keytypemap(entry))
-
-        keys = keys.values()
-        sql_upd_keys = queries.insert('meta_keys') + queries.conflict_clause('meta_keys') + queries.close()
-        self.__cursor.executemany(sql_upd_keys, keys) 
+        sql_upd_mvals = queries.insert('meta_values') + queries.conflict_clause('meta_values') + queries.close()
+        sql_upd_mapping = queries.insert('meta_map') + queries.conflict_clause('meta_map') + queries.close()
         
-        #TODO meta values
+        for filedata in datalist:    
+            if not filedata:
+                continue
+            filename = filedata.pop("filename")
+            for key, value in filedata.items():
+                self.__cursor.execute(sql_upd_mvals, (key, value))
+                self.__cursor.execute(sql_upd_mapping, (filename, "LASTROW")) 
 
         self.__db.commit()

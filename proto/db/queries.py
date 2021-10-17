@@ -1,7 +1,7 @@
 UPD_KEYS = {
     "files": ['path', 'parent', 'modified', 'is_dir'],
     "meta_keys": ['mkey', 'mtype', 'descr'],
-    "meta_values": ['key_id', 'mvalue'],
+    "meta_values": ['mkey_id', 'mvalue'],
     "meta_map": ['file_id', 'mvalue_id']
 }
 

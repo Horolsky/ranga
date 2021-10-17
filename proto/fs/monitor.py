@@ -69,7 +69,7 @@ class Monitor:
     
     #TODO: use threadpool for this
     def upd_meta(self, files: List[tuple]) -> None:
-        data = [ get_data(file[PATH]) for file in files ]
+        data = [ get_data(file[PATH]) for file in files if not file[IS_DIR] ]
         self.db.update_meta(data)
 
     def __del__(self):

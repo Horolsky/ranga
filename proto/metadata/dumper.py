@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import subprocess
 from typing import Dict, NamedTuple
 from json import loads
