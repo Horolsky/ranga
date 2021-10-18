@@ -212,3 +212,21 @@ FROM
    (SELECT id, path FROM files) as t2
    ON 
    t1.parent = t2.id;
+
+/* file + metadata view */
+CREATE VIEW IF NOT EXISTS files_metadata_map AS
+SELECT
+    filename,
+    mkey,
+    mvalue,
+    mtype,
+    descr,
+    parent_path,
+    modified,
+    file_id,
+    parent_id,
+    meta_data.mvalue_id,    
+    meta_data.mkey_id   
+FROM meta_data 
+    JOIN meta_map ON meta_data.mvalue_id = meta_map.mvalue_id 
+    JOIN files_view ON meta_map.file_id = files_view.id;
