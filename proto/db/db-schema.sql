@@ -186,6 +186,8 @@ VIEWS
 /* metadata + key info */
 CREATE VIEW IF NOT EXISTS meta_data AS
 SELECT
+    meta_values.id as mvalue_id,
+    mkey_id,
     mkey,
     mtype,
     mvalue,
