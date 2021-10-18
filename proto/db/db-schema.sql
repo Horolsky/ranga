@@ -155,6 +155,7 @@ SELECT
     mvalue,
     mtype,
     descr,
+    path,
     parent_path,
     modified,
     file_id,
@@ -170,6 +171,51 @@ DATA TRIGGERS
 */
 
 /* put parent as path, replace with id */
+
+CREATE TRIGGER IF NOT EXISTS  metadata_insertion_handler
+    INSTEAD OF INSERT ON files_metadata_map
+BEGIN
+    INSERT INTO meta_keys(mkey, mtype, descr)
+    VALUES(
+        NEW.mkey, 
+        NEW.mtype, 
+        NEW.descr
+        )
+        ON CONFLICT(mkey) DO UPDATE SET 
+        mtype = CASE WHEN excluded.mtype = NULL THEN mtype ELSE excluded.mtype END,
+        descr = CASE WHEN excluded.descr = NULL THEN descr ELSE excluded.descr END;
+
+    UPDATE [last_rows] SET
+        mkey_id = (SELECT id FROM meta_keys WHERE mkey = NEW.mkey LIMIT 1)
+    WHERE id = 0;
+
+    INSERT INTO meta_values(mkey_id, mvalue)
+    VALUES(
+        (SELECT mkey_id FROM last_rows WHERE id = 0 LIMIT 1),
+        NEW.mvalue
+        );
+    -- duplicate key-value pair is handled by separate trigger for meta_values
+
+    UPDATE [last_rows] SET
+        mvalue_id = (SELECT id FROM meta_values 
+        WHERE mkey_id = (SELECT id FROM meta_keys WHERE mkey = NEW.mkey LIMIT 1)
+        AND mvalue = NEW.mvalue 
+        LIMIT 1)
+    WHERE id = 0;
+
+    UPDATE [last_rows] SET
+        file_id = (SELECT id FROM files WHERE path = NEW.path LIMIT 1)  
+    WHERE id = 0;
+
+    -- use the artist id to insert a new album
+    INSERT INTO meta_map(file_id, mvalue_id)
+    VALUES(
+        (SELECT file_id FROM last_rows WHERE id = 0 LIMIT 1),
+        (SELECT mvalue_id FROM last_rows WHERE id = 0 LIMIT 1)
+        );
+END;
+
+/* put parent as path, replace with id */
 CREATE TRIGGER IF NOT EXISTS [files_find_parent] 
 AFTER INSERT ON [files]
     WHEN TYPEOF(NEW.parent) <> 'INTEGER'
@@ -178,55 +224,4 @@ BEGIN
     SET
     parent = (SELECT id FROM [files] WHERE path = NEW.parent LIMIT 1)
     WHERE id = NEW.id;
-END;
-
-/* ignore if record exists (no uniques) */
-CREATE TRIGGER IF NOT EXISTS [mvalues_ignore_dupes] 
-BEFORE INSERT ON [meta_values]
-WHEN 
-    (SELECT count(*) 
-    FROM meta_values 
-    JOIN meta_keys
-    ON meta_keys.id = meta_values.mkey_id
-    -- mkey_id stores mkey here
-    WHERE meta_keys.mkey = NEW.mkey_id AND meta_values.mvalue = NEW.mvalue)
-    <> 0
-BEGIN
-    SELECT(RAISE(IGNORE));
-END;
-
-/* add key if not exists */
-CREATE TRIGGER IF NOT EXISTS [mvalues_add_key] 
-BEFORE INSERT ON [meta_values]
-WHEN 
-    (SELECT count(*) 
-    FROM meta_keys 
-    WHERE NEW.mkey_id IN (meta_keys.id, meta_keys.mkey))
-    = 0
-BEGIN
-    INSERT INTO meta_keys(mkey) VALUES
-    (NEW.mkey_id);
-END;
-
-/* put key_id as mkey string, replace with id */
-CREATE TRIGGER IF NOT EXISTS [mvalues_find_key] 
-AFTER INSERT ON [meta_values]
-    WHEN TYPEOF(NEW.mkey_id) <> 'INTEGER'
-BEGIN
-    UPDATE [meta_values]
-    SET
-    mkey_id = (SELECT id FROM meta_keys WHERE mkey = NEW.mkey_id LIMIT 1)
-    WHERE id = NEW.id;
-END;
-
-/* put file_id as path and mvalue_id as trigger literal, replace with ids */
-CREATE TRIGGER IF NOT EXISTS [mmap_find_ids] 
-AFTER INSERT ON [meta_map]
-    WHEN TYPEOF(NEW.file_id) <> 'INTEGER' AND NEW.mvalue_id = "LASTROW"
-BEGIN
-    UPDATE [meta_map]
-    SET
-    file_id = (SELECT id FROM files WHERE path = NEW.file_id LIMIT 1),
-    mvalue_id = (SELECT mvalue_id from last_rows WHERE id = 0 LIMIT 1)
-    WHERE rowid = NEW.rowid;
 END;

@@ -80,7 +80,10 @@ class DbManager:
                 continue
             filename = filedata.pop("filename")
             for key, value in filedata.items():
-                self.__cursor.execute(sql_upd_mvals, (key, value))
-                self.__cursor.execute(sql_upd_mapping, (filename, "LASTROW")) 
-
+                
+                #TODO remove query literal
+                self.__cursor.execute(
+                    "INSERT INTO files_metadata_map(path, mkey, mvalue) VALUES (?,?,?)",
+                    (filename, key, value)
+                )
         self.__db.commit()
