@@ -114,6 +114,58 @@ BEGIN
 END;
 
 /*
+VIEWS
+*/
+
+/* metadata + key info */
+CREATE VIEW IF NOT EXISTS meta_data AS
+SELECT
+    meta_values.id as mvalue_id,
+    mkey_id,
+    mkey,
+    mtype,
+    mvalue,
+    descr
+FROM
+    meta_keys
+    JOIN meta_values ON meta_values.mkey_id = meta_keys.id;
+
+/* parent path and filename map, does not include entry nodes*/
+CREATE VIEW IF NOT EXISTS files_view AS
+SELECT 
+    t1.id,
+    t1.path,
+    SUBSTR(t1.path, LENGTH(t2.path) + 2) as filename,
+    t1.modified,
+    t1.is_dir,
+    t1.parent as parent_id,
+    t2.path as parent_path
+FROM
+   (SELECT * FROM files) as t1
+   JOIN
+   (SELECT id, path FROM files) as t2
+   ON 
+   t1.parent = t2.id;
+
+/* file + metadata view */
+CREATE VIEW IF NOT EXISTS files_metadata_map AS
+SELECT
+    filename,
+    mkey,
+    mvalue,
+    mtype,
+    descr,
+    parent_path,
+    modified,
+    file_id,
+    parent_id,
+    meta_data.mvalue_id,    
+    meta_data.mkey_id   
+FROM meta_data 
+    JOIN meta_map ON meta_data.mvalue_id = meta_map.mvalue_id 
+    JOIN files_view ON meta_map.file_id = files_view.id;
+
+/*
 DATA TRIGGERS
 */
 
@@ -178,55 +230,3 @@ BEGIN
     mvalue_id = (SELECT mvalue_id from last_rows WHERE id = 0 LIMIT 1)
     WHERE rowid = NEW.rowid;
 END;
-
-/*
-VIEWS
-*/
-
-/* metadata + key info */
-CREATE VIEW IF NOT EXISTS meta_data AS
-SELECT
-    meta_values.id as mvalue_id,
-    mkey_id,
-    mkey,
-    mtype,
-    mvalue,
-    descr
-FROM
-    meta_keys
-    JOIN meta_values ON meta_values.mkey_id = meta_keys.id;
-
-/* parent path and filename map, does not include entry nodes*/
-CREATE VIEW IF NOT EXISTS files_view AS
-SELECT 
-    t1.id,
-    t1.path,
-    SUBSTR(t1.path, LENGTH(t2.path) + 2) as filename,
-    t1.modified,
-    t1.is_dir,
-    t1.parent as parent_id,
-    t2.path as parent_path
-FROM
-   (SELECT * FROM files) as t1
-   JOIN
-   (SELECT id, path FROM files) as t2
-   ON 
-   t1.parent = t2.id;
-
-/* file + metadata view */
-CREATE VIEW IF NOT EXISTS files_metadata_map AS
-SELECT
-    filename,
-    mkey,
-    mvalue,
-    mtype,
-    descr,
-    parent_path,
-    modified,
-    file_id,
-    parent_id,
-    meta_data.mvalue_id,    
-    meta_data.mkey_id   
-FROM meta_data 
-    JOIN meta_map ON meta_data.mvalue_id = meta_map.mvalue_id 
-    JOIN files_view ON meta_map.file_id = files_view.id;
