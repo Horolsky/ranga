@@ -193,3 +193,20 @@ SELECT
 FROM
     meta_keys
     JOIN meta_values ON meta_values.mkey_id = meta_keys.id;
+
+/* parent path and filename map, does not include entry nodes*/
+CREATE VIEW IF NOT EXISTS files_view AS
+SELECT 
+    t1.id,
+    t1.path,
+    SUBSTR(t1.path, LENGTH(t2.path) + 2) as filename,
+    t1.modified,
+    t1.is_dir,
+    t1.parent as parent_id,
+    t2.path as parent_path
+FROM
+   (SELECT * FROM files) as t1
+   JOIN
+   (SELECT id, path FROM files) as t2
+   ON 
+   t1.parent = t2.id;
