@@ -7,7 +7,7 @@ from PyQt5.QtCore import QCoreApplication
 from pathlib import Path
 
 from proto.db.manager import DbManager
-from proto.fs.monitor import Monitor
+from proto.monitor import Monitor
 
 HOME_DIR = str(Path.home())
 VIDEOS_DIR = F"{HOME_DIR}/pam_demo"

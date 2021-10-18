@@ -4,8 +4,8 @@ from typing import List
 
 from PyQt5.QtCore import QFileSystemWatcher
 
-from ..db.manager import DbManager
-from ..metadata.dumper import get_data
+from proto.db.manager import DbManager
+from .dumper import get_data
 
 # tuple indexation for file record
 PATH, PARENT, MODIFIED, IS_DIR = 0,1,2,3
