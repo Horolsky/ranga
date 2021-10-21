@@ -39,18 +39,15 @@ class Monitor:
                 
         return files
         
-    def __init__(self, root: str, db: DbManager) -> None:
-        print(f"init monitor on {root}")
+    def __init__(self, db: DbManager) -> None:
         self.db = db
         self.watchdog = QFileSystemWatcher()
-        self.watchdog.directoryChanged.connect(self.on_upd)
-        self.root = root
-        self.on_upd(root, True)
+        self.watchdog.directoryChanged.connect(self.update)
         
-    def on_upd(self, node: str, fullupd: bool = False) -> None:
+    def update(self, node: str, deep: bool = False) -> None:
         print(f"update dir: {node}")
 
-        local_files = { file[PATH]: file for file in Monitor.walk_dir(node, fullupd) }
+        local_files = { file[PATH]: file for file in Monitor.walk_dir(node, deep) }
         db_records = { record[PATH]: record for record in self.db.get_files_in_dir(node) }
 
         to_remove = [ (path,) for path in set(db_records) - set(local_files) ]
@@ -65,7 +62,7 @@ class Monitor:
         if isdir(node): self.watchdog.addPath(node)
         if to_watch: self.watchdog.addPaths(to_watch)
         for path in to_watch:
-            self.on_upd(path, True)
+            self.update(path, True)
     
     #TODO: use threadpool for this
     def upd_meta(self, files: List[tuple]) -> None:

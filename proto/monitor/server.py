@@ -1,6 +1,7 @@
 from pathlib import Path
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtNetwork import QHostAddress, QTcpServer
+from os.path import isdir
 
 from proto.db.manager import DbManager
 from proto.monitor import Monitor
@@ -27,14 +28,12 @@ class Server(QObject):
             raise ConnectionError(f'could not establish connection on port {PORT}')
         self.tcp_server.newConnection.connect(self.on_connect)
         
-        # self.monitor = Monitor(self.db)
-        # paths_to_watch = get from db
-        # self.monitor.add_paths(paths_to_watch)
-        
+        # TODO: get dirs from db
         paths_to_watch = VIDEOS_DIR
-        self.monitor = Monitor(paths_to_watch, self.db)
-        
-        print("monitor server launched")
+        self.monitor = Monitor(self.db)
+        print("monitor: server launched")
+        self.monitor.update(paths_to_watch)
+        print("monitor: initial update done")
 
     def exec_command(self, command: str, arg: str) -> str:
 
@@ -42,6 +41,8 @@ class Server(QObject):
             return "return watched paths, arg: [roots|all|dirs|files]"
             
         elif command == 'add':
+            if isdir(arg):
+                self.monitor.update(arg)
             return "add path to watched paths, arg: path"
             
         elif command == 'remove':
