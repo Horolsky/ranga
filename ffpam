@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
 
 import sys
-from proto.monitor.application import main
+from proto.indexer.application import main
 sys.exit(main())
