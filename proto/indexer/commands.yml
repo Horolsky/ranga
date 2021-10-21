@@ -38,3 +38,13 @@ monitor:
       nargs: '+'
       help: update file records in database
       metavar: <path>
+    - names: [--run, -r]
+      action: 'store_true'
+      help: run monitor server
+    - names: [--stop, -s]
+      action: 'store_true'
+      help: stop monitor server
+    - names: [--port, -p]
+      nargs: 1
+      help: port number
+      metavar: <port>
