@@ -1,0 +1,40 @@
+#indexer commands
+search:
+  help: search metadata by keyword
+  arguments:  
+    - names: [keywords]
+      nargs: '+' # at least one
+      help: "keywords: filenames, metadata keys or values"
+      metavar: K
+show:
+  help: show table from database
+  arguments:
+    - names: [table]
+      nargs: 1
+      help: database table or view
+      metavar: <table>
+    - names: [--mode, -m]
+      nargs: 1
+      choices: [ csv, column, html, line, list ]
+      help: sqlite3 output mode
+      metavar: M
+tables:
+  help: list table names
+monitor:
+  help: local file system monitor server
+  arguments:
+    - names: [--list, -l]
+      action: 'store_true'
+      help: list watched root dirs 
+    - names: [--add, -a]
+      nargs: '+'
+      help: add directory to the watchlist
+      metavar: <path>
+    - names: [--remove]
+      nargs: '+'
+      help: remove directory from the watchlist
+      metavar: <path>
+    - names: [--update, -u]
+      nargs: '+'
+      help: update file records in database
+      metavar: <path>
