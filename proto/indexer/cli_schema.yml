@@ -10,11 +10,9 @@ show:
   help: show table from database
   arguments:
     - names: [table]
-      nargs: 1
       help: database table or view
       metavar: <table>
     - names: [--mode, -m]
-      nargs: 1
       choices: [ csv, column, html, line, list ]
       help: sqlite3 output mode
       metavar: M
@@ -45,6 +43,5 @@ monitor:
       action: 'store_true'
       help: stop monitor server
     - names: [--port, -p]
-      nargs: 1
       help: port number
       metavar: <port>

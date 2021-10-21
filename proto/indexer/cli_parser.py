@@ -8,7 +8,7 @@ INFO = {
     "description": "local media file indexer",
 } 
 SCRIPT_DIR = dirname(realpath(__file__))
-COMMANDS_FILE = SCRIPT_DIR + "/commands.yml"
+COMMANDS_FILE = SCRIPT_DIR + "/cli_schema.yml"
 
 def build_argparser() -> argparse.ArgumentParser:
 
