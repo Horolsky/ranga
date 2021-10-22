@@ -1,9 +1,9 @@
 import sqlite3
 from os.path import dirname, realpath 
 from sqlite3.dbapi2 import Connection, Cursor
-from typing import List, Tuple
+from typing import List, Set, Tuple
 from pathlib import Path
-from functools import reduce
+
 import proto.db.queries as queries
 
 SCRIPT_DIR = dirname(realpath(__file__))
@@ -38,7 +38,10 @@ class DbManager:
             sql_script = sql_file.read()
             self.__cursor.executescript(sql_script)
             self.__db.commit()
-
+    def get_tablenames(self) -> List[str]:
+        sql = queries.tablenames()
+        self.__cursor.execute(sql)
+        return self.__cursor.fetchall()
 
     def update_files(self, files: List[Tuple[str, float]]):
         """
@@ -48,6 +51,11 @@ class DbManager:
         sql_upd_files = queries.insert('files') + queries.conflict_clause('files') + queries.close()
         self.__cursor.executemany(sql_upd_files, files) 
         self.__db.commit()
+
+    def get_root_dirs(self) -> Set[str]:
+        sql = queries.select('files') + queries.files_where_stmt("roots") + queries.close()
+        self.__cursor.execute(sql)
+        return { entry[0] for entry in self.__cursor.fetchall() }
 
     def get_all_files(self) -> List[Tuple[str, float]]:
         self.__cursor.execute(queries.select('files') + queries.close()) 
@@ -63,7 +71,7 @@ class DbManager:
         self.__cursor.execute(sql,  (f"%.{sfx}",))
         return self.__cursor.fetchall()
         
-    def remove_files(self, paths: List[str]) -> None:
+    def remove_files(self, paths: Set[str]) -> None:
         sql = queries.delete_files() + queries.close()
         self.__cursor.executemany(sql, paths)
         self.__db.commit()
