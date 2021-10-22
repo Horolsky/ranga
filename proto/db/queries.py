@@ -52,9 +52,14 @@ def files_where_stmt(case: str) -> str:
     if case == "directory":
         return "WHERE parent = (SELECT id FROM files WHERE path = (?) LIMIT 1)"
     elif case == "suffix":
-        return "FROM files WHERE path LIKE (?)"
+        return "WHERE path LIKE (?)"
+    elif case == "roots":
+        return "WHERE parent IS NULL"
     else:
         raise KeyError("unknown case")
 
 def delete_files() -> str:
     return "DELETE FROM files WHERE path IN (?)"
+
+def tablenames() -> str:
+    return 'SELECT name FROM sqlite_master WHERE type IN ("table", "view")'
