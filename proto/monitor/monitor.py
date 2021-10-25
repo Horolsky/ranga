@@ -5,7 +5,7 @@ from typing import List, Set
 from PyQt5.QtCore import QFileSystemWatcher
 
 from proto.db.manager import DbManager
-from .dumper import get_data
+from proto.monitor.dumper import get_data
 
 # tuple indexation for file record
 PATH, PARENT, MODIFIED, IS_DIR = 0,1,2,3
@@ -71,6 +71,9 @@ class Monitor:
     def upd_meta(self, files: List[tuple]) -> None:
         data = [ get_data(file[PATH]) for file in files if not file[IS_DIR] ]
         self.db.update_meta(data)
+
+    def unwatch(self, paths):
+        self.watchdog.removePaths(paths)
 
     def __del__(self):
         print(f"shutdown monitor on {self.root}")
