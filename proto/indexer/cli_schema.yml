@@ -21,27 +21,40 @@ tables:
 monitor:
   help: local file system monitor server
   arguments:
+
     - names: [--list, -l]
       action: 'store_true'
       help: list watched root dirs 
+
     - names: [--add, -a]
       nargs: '+'
       help: add directory to the watchlist
       metavar: <path>
+
     - names: [--remove]
       nargs: '+'
       help: remove directory from the watchlist
       metavar: <path>
+
     - names: [--update, -u]
-      nargs: '+'
+      nargs: '*'
       help: update file records in database
       metavar: <path>
+
     - names: [--run, -r]
       action: 'store_true'
       help: run monitor server
-    - names: [--stop, -s]
+
+    - names: [--stop]
       action: 'store_true'
       help: stop monitor server
+
     - names: [--port, -p]
-      help: port number
+      help: get/set port number
+      const: 'get'
+      nargs: '?'
       metavar: <port>
+
+    - names: [--status, -s]
+      help: show monitor server status
+      action: 'store_true'
