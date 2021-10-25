@@ -2,7 +2,7 @@
 
 import sys
 from PyQt5.QtCore import QCoreApplication
-from .server import Server
+from proto.monitor.server import Server
 
 def main() -> int:
     
