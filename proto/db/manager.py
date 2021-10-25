@@ -43,6 +43,16 @@ class DbManager:
         self.__cursor.execute(sql)
         return self.__cursor.fetchall()
 
+    def add_roots(self, paths: List[str]):
+        """
+        add files with modified=0
+        used for adding root dirs
+        """    
+        files = {(path, None, 0, 1) for path in paths}
+        sql_upd_files = queries.insert('files') + queries.conflict_clause('files') + queries.close()
+        self.__cursor.executemany(sql_upd_files, files) 
+        self.__db.commit()
+    
     def update_files(self, files: List[Tuple[str, float]]):
         """
         upsert files table
