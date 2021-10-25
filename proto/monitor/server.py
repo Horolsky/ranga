@@ -62,7 +62,7 @@ class Server(QObject):
 
         elif command == 'remove':
             self.monitor.unwatch(argv)
-            self.db.remove_files(set(argv))
+            self.db.remove_files({(path,) for path in argv})
             response = "files removed"
 
 
