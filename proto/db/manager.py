@@ -27,6 +27,13 @@ class DbManager:
         self.__cursor: Cursor = self.__db.cursor()
         self.load_schema()
 
+    def __enter__(self):
+        # self.__init__()
+        return self
+  
+    def __exit__(self):
+        self.__del__()
+
     def __del__(self) -> None:
         self.__db.close()
 

@@ -29,8 +29,9 @@ def exec_tables(**kwargs):
 def exec_monitor(**kwargs):
     
     if kwargs['list']:
-        paths_to_watch = DbManager().get_root_dirs()
-        print('\n'.join(paths_to_watch))
+        with DbManager() as db:
+            paths_to_watch = db.get_root_dirs()
+            print('\n'.join(paths_to_watch))
 
     if kwargs['add']:
         paths = { abspath(path) for path in kwargs["add"] }
@@ -38,7 +39,8 @@ def exec_monitor(**kwargs):
             updcmd = f'printf "add:{";".join(paths)}" | nc {HOST} {PORT} &'
             os.system(updcmd)
         else:
-            DbManager().add_roots(paths)
+            with DbManager() as db:
+                db.add_roots(paths)
         
     if kwargs['remove']:
         paths = { abspath(path) for path in kwargs["remove"] }
@@ -46,7 +48,8 @@ def exec_monitor(**kwargs):
             updcmd = f'printf "remove:{";".join(paths)}" | nc {HOST} {PORT} &'
             os.system(updcmd)
         else:
-            DbManager().remove_files(paths)
+            with DbManager() as db:
+                db.remove_files({(path,) for path in paths})
 
     if kwargs['update']:
         if serv_is_running():
