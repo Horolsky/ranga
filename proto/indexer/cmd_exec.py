@@ -1,16 +1,18 @@
-import multiprocessing
-import os 
-import subprocess
+import logging
+from os import fork, system
 from os.path import abspath
-# from multiprocessing.connection import Client
+from typing import Callable
 
 from proto.monitor.application import main as monitor_run
 from proto.monitor.server import HOST, PORT
 from proto.db.manager import DbManager
-# from proto.monitor.qtclient import Client
 
 TIMEOUT = 1000
-# from proto.monitor.client import Client
+
+def run_fork_proc(entry: Callable):
+    if fork() != 0:
+        return
+    entry()
 
 def serv_is_running():
     import socket
@@ -18,16 +20,21 @@ def serv_is_running():
         return s.connect_ex((HOST, PORT)) == 0
 
 def exec_search(**kwargs):
-    print(kwargs)
+    logging.debug("indexer: search call")
+    logging.debug(str(kwargs))
 
 def exec_show(**kwargs):
-    print(kwargs)
+    logging.debug("indexer: show call")
+    logging.debug(str(kwargs))
 
 def exec_tables(**kwargs):
-    print(kwargs)
+    logging.debug("indexer: tables call")
+    logging.debug(str(kwargs))
 
 def exec_monitor(**kwargs):
-    
+    logging.debug("indexer: monitor call")
+    logging.debug(str(kwargs))
+
     if kwargs['list']:
         with DbManager() as db:
             paths_to_watch = db.get_root_dirs()
@@ -37,7 +44,7 @@ def exec_monitor(**kwargs):
         paths = { abspath(path) for path in kwargs["add"] }
         if serv_is_running():
             updcmd = f'printf "add:{";".join(paths)}" | nc {HOST} {PORT} &'
-            os.system(updcmd)
+            system(updcmd)
         else:
             with DbManager() as db:
                 db.add_roots(paths)
@@ -46,7 +53,7 @@ def exec_monitor(**kwargs):
         paths = { abspath(path) for path in kwargs["remove"] }
         if serv_is_running():
             updcmd = f'printf "remove:{";".join(paths)}" | nc {HOST} {PORT} &'
-            os.system(updcmd)
+            system(updcmd)
         else:
             with DbManager() as db:
                 db.remove_files({(path,) for path in paths})
@@ -54,17 +61,16 @@ def exec_monitor(**kwargs):
     if kwargs['update']:
         if serv_is_running():
             updcmd = f'printf "update:{";".join(kwargs["update"])}" | nc {HOST} {PORT} &'
-            os.system(updcmd)
+            system(updcmd)
         else:
             print("monitor is not launched")
         
     if kwargs['run']:
-        process = multiprocessing.Process(target=monitor_run, daemon=True)
-        process.start()
+        run_fork_proc(monitor_run)
         
     if kwargs['stop']:
         stopcmd = f'printf "stop:none" | nc {HOST} {PORT} &'
-        os.system(stopcmd)
+        system(stopcmd)
     if kwargs['port'] == 'get':
         print(PORT)
         #TODO: move port number to env
