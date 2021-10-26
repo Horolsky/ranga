@@ -1,3 +1,4 @@
+import logging
 from os.path import isdir, getmtime, join as joinpath
 from os import walk, listdir
 from typing import List, Set
@@ -45,7 +46,7 @@ class Monitor:
         self.watchdog.directoryChanged.connect(lambda path: self.update( {path} ))
         
     def update(self, nodes: Set[str], deep: bool = False) -> None:
-        print("update dirs:\n" + "\n".join(nodes))
+        logging.info(f"update dirs: {nodes}")
 
 
         local_files = { file[PATH]: file for node in nodes for file in Monitor.walk_dir(node, deep) }
@@ -76,4 +77,4 @@ class Monitor:
         self.watchdog.removePaths(paths)
 
     def __del__(self):
-        print(f"shutdown monitor on {self.root}")
+        logging.info(f"shutdown monitor on {self.root}")
