@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtNetwork import QHostAddress, QTcpServer
+import json
 
 from proto.db.manager import DbManager
 from proto.monitor import Monitor
@@ -37,32 +38,38 @@ class Server(QObject):
         client_connection.waitForReadyRead()
         
         instr = client_connection.readAll()
+        logging.debug(f"monitor: instr: {instr}")
+        instr.remove(0, 4) #TODO handle this better
+        request = str(bytes(instr), encoding='ascii')
+        logging.debug(f"monitor: request: {request}")
+        command, args = None, None
+        response = "404"
+        try:
+            req_obj = json.loads(request)
+            command = req_obj['command']
+            args = req_obj['args']
+        except:
+            logging.error("monitor: invalid request object")
 
-        request = str(instr, encoding='ascii')
-        logging.debug("monitor request:")
-        logging.debug(request)
-        command, argv = request.split(':') 
-        command = command.lower()
-        argv = argv.lower().split(';')
-
+        logging.debug(f"monitor cmd: {command}")
+        logging.debug(f"monitor arg: {args}")
         if command in ('exit','quit', 'stop'):
-            logging.info(f"server closed by request, arg: {argv}")
+            logging.info(f"server closed by request, arg: {args}")
             # self.on_exit.emit()
             quit()
-        
+
         elif command in ('update', 'add'):
-            if command == 'update' and len(argv) == 0:
-                argv = DbManager().get_root_dirs()
+            if command == 'update' and len(args) == 0:
+                args = DbManager().get_root_dirs()
             logging.debug("monitor: adding records")
-            self.monitor.update(set(argv))
+            self.monitor.update(set(args))
             response = "fs updated"
 
         elif command == 'remove':
-            self.monitor.unwatch(argv)
+            self.monitor.unwatch(args)
             logging.debug("monitor: removing records")
-            self.db.remove_files({(path,) for path in argv})
+            self.db.remove_files({(path,) for path in args})
             response = "files removed"
-
 
         client_connection.disconnected.connect(client_connection.deleteLater)
         client_connection.write(bytes(response, encoding="ascii"))
