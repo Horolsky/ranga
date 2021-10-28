@@ -4,7 +4,7 @@ import yaml
 from os.path import dirname, realpath 
 
 INFO = {
-    "prog": "ffpam",
+    "prog": "ffindex",
     "description": "local media file indexer",
 } 
 SCRIPT_DIR = dirname(realpath(__file__))
