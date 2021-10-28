@@ -59,9 +59,10 @@ class Server(QObject):
             quit()
 
         elif command in ('update', 'add'):
-            if command == 'update' and len(args) == 0:
+            if command == 'update' and 'all' in args:
                 args = DbManager().get_root_dirs()
             logging.debug("monitor: adding records")
+            logging.debug(args)
             self.monitor.update(set(args))
             response = "fs updated"
 

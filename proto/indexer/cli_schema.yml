@@ -55,7 +55,8 @@ monitor:
       metavar: <path>
 
     - names: [--update, -u]
-      nargs: '*'
+      action: 'append_const'
+      const: all
       help: update file records in database
       metavar: <path>
 
