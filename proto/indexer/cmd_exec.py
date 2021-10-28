@@ -23,20 +23,25 @@ def serv_is_running() -> bool:
         return s.connect_ex((HOST, PORT)) == 0
 
 def exec_search(**kwargs):
-    logging.debug("indexer: search call")
-    logging.debug(f"indexer args: {str(kwargs)}")
+    logging.debug(f"indexer: search call, args={str(kwargs)}")
 
 def exec_show(**kwargs):
-    logging.debug("indexer: show call")
-    logging.debug(f"indexer args: {str(kwargs)}")
+    logging.debug(f"indexer: show call, args={str(kwargs)}")
+    with DbManager() as db:
+        table = kwargs['table']
+        mode = kwargs['mode']
+        header = not kwargs['headless']
+        output = db.get_table_as_string(table, mode, header)
+        print(output)
 
 def exec_tables(**kwargs):
-    logging.debug("indexer: tables call")
-    logging.debug(f"indexer args: {str(kwargs)}")
+    # logging.debug(f"indexer: tables call, args={str(kwargs)}")
+    with DbManager() as db:
+        tables = db.get_tablenames()
+        print('\n'.join(tables))
 
 def exec_monitor(**kwargs):
-    logging.debug("indexer: monitor call")
-    logging.debug(f"indexer args: {str(kwargs)}")
+    logging.debug(f"indexer: monitor call, args={str(kwargs)}")
 
     kwargs = {k : kwargs[k] for k in kwargs if kwargs[k] }
     if len(kwargs) != 1:

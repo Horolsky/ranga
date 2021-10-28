@@ -14,8 +14,11 @@ show:
       metavar: <table>
     - names: [--mode, -m]
       choices: [ csv, column, html, line, list ]
-      help: sqlite3 output mode
+      help: sqlite3 output mode (csv, column, html, line, list)
       metavar: M
+    - names: [--headless]
+      action: 'store_true'
+      help: exclude header from the output
 tables:
   help: list table names
 monitor:
