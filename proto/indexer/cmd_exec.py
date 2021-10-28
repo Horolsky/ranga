@@ -24,6 +24,14 @@ def serv_is_running() -> bool:
 
 def exec_search(**kwargs):
     logging.debug(f"indexer: search call, args={str(kwargs)}")
+    with DbManager() as db:
+        keywords = kwargs['keywords']
+        categories = kwargs['category']
+        exact = kwargs['exact']
+        mode = kwargs['mode']
+        header = not kwargs['headless']
+        output = db.search_by_keyword(keywords, categories, exact, mode, header)
+        print(output)
 
 def exec_show(**kwargs):
     logging.debug(f"indexer: show call, args={str(kwargs)}")

@@ -2,10 +2,25 @@
 search:
   help: search metadata by keyword
   arguments:  
-    - names: [keywords]
+    - names: [--keywords, -k]
+      required: Yes
       nargs: '+' # at least one
-      help: "keywords: filenames, metadata keys or values"
-      metavar: K
+      help: "keywords: filenames, metadata values"
+      metavar: <kw>
+    - names: [--category, -c]
+      nargs: '+'
+      help: specific categories by which to search (filename, path, <metadata key>)
+      metavar: <cat>
+    - names: [--exact, -e]
+      action: 'store_true'
+      help: search only for whole word matches
+    - names: [--mode, -m]
+      choices: [ csv, column, html, line, list ]
+      help: sqlite3 output mode (csv, column, html, line, list)
+      metavar: <mode>
+    - names: [--headless]
+      action: 'store_true'
+      help: exclude header from the output
 show:
   help: show table from database
   arguments:
@@ -15,7 +30,7 @@ show:
     - names: [--mode, -m]
       choices: [ csv, column, html, line, list ]
       help: sqlite3 output mode (csv, column, html, line, list)
-      metavar: M
+      metavar: <mode>
     - names: [--headless]
       action: 'store_true'
       help: exclude header from the output

@@ -1,3 +1,6 @@
+from typing import Set, Tuple
+
+
 UPD_KEYS = {
     "files": ['path', 'parent', 'modified', 'is_dir'],
     "meta_keys": ['mkey', 'mtype', 'descr'],
@@ -53,6 +56,8 @@ def files_where_stmt(case: str) -> str:
         return "WHERE parent = (SELECT id FROM files WHERE path = (?) LIMIT 1)"
     elif case == "suffix":
         return "WHERE path LIKE (?)"
+    elif case == "id":
+        return "WHERE id IS (?)"
     elif case == "roots":
         return "WHERE parent IS NULL"
     else:

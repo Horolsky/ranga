@@ -91,22 +91,6 @@ class DbManager:
         self.__cursor.execute(sql,  (f"%.{sfx}",))
         return self.__cursor.fetchall()
 
-    def get_table_as_string(self, table: str, mode: str, header: bool):
-        """
-        return output of the sqlite3 CLI command as a string
-        """
-        if mode is None: mode = "list"
-        if mode not in ( "csv", "column", "html", "line", "list" ):
-            raise ValueError("invalid mode option")
-
-        sql = f"SELECT * FROM {table};"
-        #header = "-header" if mode == "column" else "" 
-        header = "-header" if header else ""
-        command = f'sqlite3 {DB_PATH} "{sql}" -{mode} {header}'
-
-        output = subprocess.check_output(command, shell=True)
-        output = str(output, encoding="ascii")
-        return output
         
     def remove_files(self, paths: Set[str]) -> None:
         sql = queries.delete_files() + queries.close()
@@ -132,3 +116,48 @@ class DbManager:
                     (filename, key, value)
                 )
         self.__db.commit()
+
+    def search_by_keyword(self, keywords: List[str], categories: list, exact: bool, mode: str, header: bool) -> str:
+        """
+        return ids of files that meets the search conditions
+        """
+        file_ids = []
+        keywords = [ f'"{kw}"' if exact else f'"%{kw}%"' for kw in keywords ]
+        keywords_filter = lambda column: ''.join([ f" {column} LIKE {kw}" for kw in keywords ])
+
+        sql_mvalues = "SELECT mvalue_id FROM meta_data WHERE" + keywords_filter('mvalue')
+        if not categories: categories = []
+        kw_categories = set(categories).difference({'filename', 'path'})
+        kw_categories = [f'"{key}"' for key in kw_categories]
+        if kw_categories:
+            sql_mvalues += f" AND mkey IN ({','.join(kw_categories)})"
+        sql_mvalues += ";"
+                
+        self.__cursor.execute(sql_mvalues)
+        mval_ids = [ str(row[0]) for row in self.__cursor.fetchall()]
+        
+        self.__cursor.execute(f"SELECT file_id FROM meta_map WHERE mvalue_id IN ({','.join(mval_ids)})")
+        file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
+        
+        if not categories or 'path' in categories:
+            sql_path = "SELECT id FROM files WHERE" + keywords_filter('path')
+            self.__cursor.execute(sql_path)
+            file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
+        
+        if 'filename' in categories or (not categories and exact):
+            sql_fnames = "SELECT id FROM files_view WHERE" + keywords_filter('filename')
+            self.__cursor.execute(sql_fnames)
+            file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
+    
+        ########
+        if mode is None: mode = "list"
+        if mode not in ( "csv", "column", "html", "line", "list" ):
+            raise ValueError("invalid mode option")
+        header = "-header" if header else ""
+
+        sql = f"SELECT filename, mkey, mvalue, parent_path as dir FROM files_metadata_map WHERE file_id IN ({','.join([str(id) for id in file_ids])});"
+        command = f'sqlite3 {DB_PATH} "{sql}" -{mode} {header}'
+
+        output = subprocess.check_output(command, shell=True)
+        output = str(output, encoding="ascii")
+        return output
