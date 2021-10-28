@@ -117,6 +117,23 @@ class DbManager:
                 )
         self.__db.commit()
 
+    def get_table_as_string(self, table: str, mode: str, header: bool):
+        """
+        return output of the sqlite3 CLI command as a string
+        """
+        if mode is None: mode = "list"
+        if mode not in ( "csv", "column", "html", "line", "list" ):
+            raise ValueError("invalid mode option")
+
+        sql = f"SELECT * FROM {table};"
+        #header = "-header" if mode == "column" else "" 
+        header = "-header" if header else ""
+        command = f'sqlite3 {DB_PATH} "{sql}" -{mode} {header}'
+
+        output = subprocess.check_output(command, shell=True)
+        output = str(output, encoding="ascii")
+        return output
+
     def search_by_keyword(self, keywords: List[str], categories: list, exact: bool, mode: str, header: bool) -> str:
         """
         return ids of files that meets the search conditions
