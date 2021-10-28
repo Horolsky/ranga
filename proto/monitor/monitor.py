@@ -61,7 +61,8 @@ class Monitor:
             self.db.update_files(to_update)
             self.upd_meta(to_update)
 
-        self.watchdog.addPaths([ node for node in nodes if isdir(node) ])
+        dir_nodes = [ node for node in nodes if isdir(node) ]
+        if dir_nodes: self.watchdog.addPaths(dir_nodes)
         if to_watch: 
             self.watchdog.addPaths(to_watch)
             self.update(to_watch, True)
