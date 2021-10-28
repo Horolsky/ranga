@@ -3,6 +3,7 @@ from os.path import dirname, realpath
 from sqlite3.dbapi2 import Connection, Cursor
 from typing import List, Set, Tuple
 from pathlib import Path
+import subprocess
 
 import proto.db.queries as queries
 
@@ -46,9 +47,11 @@ class DbManager:
             self.__cursor.executescript(sql_script)
             self.__db.commit()
     def get_tablenames(self) -> List[str]:
-        sql = queries.tablenames()
+        sql = queries.tablenames() + queries.close()
         self.__cursor.execute(sql)
-        return self.__cursor.fetchall()
+        tables = [ row[0] for row in self.__cursor.fetchall() ]
+
+        return tables
 
     def add_roots(self, paths: List[str]):
         """
@@ -87,6 +90,23 @@ class DbManager:
         sql = queries.select('files') + queries.files_where_stmt("suffix") + queries.close()
         self.__cursor.execute(sql,  (f"%.{sfx}",))
         return self.__cursor.fetchall()
+
+    def get_table_as_string(self, table: str, mode: str, header: bool):
+        """
+        return output of the sqlite3 CLI command as a string
+        """
+        if mode is None: mode = "list"
+        if mode not in ( "csv", "column", "html", "line", "list" ):
+            raise ValueError("invalid mode option")
+
+        sql = f"SELECT * FROM {table};"
+        #header = "-header" if mode == "column" else "" 
+        header = "-header" if header else ""
+        command = f'sqlite3 {DB_PATH} "{sql}" -{mode} {header}'
+
+        output = subprocess.check_output(command, shell=True)
+        output = str(output, encoding="ascii")
+        return output
         
     def remove_files(self, paths: Set[str]) -> None:
         sql = queries.delete_files() + queries.close()
