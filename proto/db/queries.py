@@ -2,28 +2,28 @@ from typing import Set, Tuple
 
 
 UPD_KEYS = {
-    "files": ['path', 'parent', 'modified', 'is_dir'],
-    "meta_keys": ['mkey', 'mtype', 'descr'],
-    "meta_values": ['mkey_id', 'mvalue'],
-    "meta_map": ['file_id', 'mvalue_id']
+    "tbl_files": ['file_path', 'parent_id', 'modified', 'is_dir'],
+    "tbl_mkeys": ['mkey', 'mtype', 'mkey_descr'],
+    "tbl_mvalues": ['mkey_id', 'mvalue'],
+    "tbl_mmap": ['file_id', 'mvalue_id']
 }
 
 #ON CONFLICT clause
 UPD_CONFL = {
-    "files": """
-    ON CONFLICT(path) DO UPDATE SET
-    modified = excluded.modified
-    WHERE excluded.modified > files.modified
+    "tbl_files": """
+    ON CONFLICT( [file_path] ) DO UPDATE SET
+    [modified] = EXCLUDED.[modified]
+    WHERE EXCLUDED.[modified] > [tbl_files].[modified]
     """,
 
-    "meta_keys": """
-    ON CONFLICT(mkey) DO UPDATE SET 
-    mtype = excluded.mtype,
-    descr = excluded.descr
+    "tbl_mkeys": """
+    ON CONFLICT( [mkey] ) DO UPDATE SET 
+    [mtype] = EXCLUDED.[mtype],
+    [mkey_descr] = EXCLUDED.[mkey_descr]
     """,
     
-    "meta_values": "",
-    "meta_map": ""
+    "tbl_mvalues": "",
+    "tbl_mmap": ""
 }
 
 #TODO factory for query templates
@@ -53,18 +53,18 @@ def select(table:str) -> str:
 
 def files_where_stmt(case: str) -> str:
     if case == "directory":
-        return "WHERE parent = (SELECT id FROM files WHERE path = (?) LIMIT 1)"
+        return "WHERE [parent_id] = (SELECT [file_id] FROM [tbl_files] WHERE [file_path] = (?) LIMIT 1)"
     elif case == "suffix":
-        return "WHERE path LIKE (?)"
-    elif case == "id":
-        return "WHERE id IS (?)"
+        return "WHERE [file_path] LIKE (?)"
+    elif case == "file_id":
+        return "WHERE [file_id] IS (?)"
     elif case == "roots":
-        return "WHERE parent IS NULL"
+        return "WHERE [parent_id] IS NULL"
     else:
         raise KeyError("unknown case")
 
 def delete_files() -> str:
-    return "DELETE FROM files WHERE path IN (?)"
+    return "DELETE FROM [tbl_files] WHERE [file_path] IN (?)"
 
 def tablenames() -> str:
-    return 'SELECT name FROM sqlite_master WHERE type IN ("table", "view")'
+    return 'SELECT [name] FROM sqlite_master WHERE [type] IN ("table", "view")'

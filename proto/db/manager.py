@@ -59,7 +59,7 @@ class DbManager:
         used for adding root dirs
         """    
         files = {(path, None, 0, 1) for path in paths}
-        sql_upd_files = queries.insert('files') + queries.conflict_clause('files') + queries.close()
+        sql_upd_files = queries.insert('tbl_files') + queries.conflict_clause('tbl_files') + queries.close()
         self.__cursor.executemany(sql_upd_files, files) 
         self.__db.commit()
     
@@ -68,26 +68,26 @@ class DbManager:
         upsert files table
         files: (path, modified)
         """    
-        sql_upd_files = queries.insert('files') + queries.conflict_clause('files') + queries.close()
+        sql_upd_files = queries.insert('tbl_files') + queries.conflict_clause('tbl_files') + queries.close()
         self.__cursor.executemany(sql_upd_files, files) 
         self.__db.commit()
 
     def get_root_dirs(self) -> Set[str]:
-        sql = queries.select('files') + queries.files_where_stmt("roots") + queries.close()
+        sql = queries.select('tbl_files') + queries.files_where_stmt("roots") + queries.close()
         self.__cursor.execute(sql)
         return { entry[0] for entry in self.__cursor.fetchall() }
 
     def get_all_files(self) -> List[Tuple[str, float]]:
-        self.__cursor.execute(queries.select('files') + queries.close()) 
+        self.__cursor.execute(queries.select('tbl_files') + queries.close()) 
         return self.__cursor.fetchall()
 
     def get_files_in_dir(self, dirpath: str) -> List[Tuple[str, float]]:
-        sql = queries.select('files') + queries.files_where_stmt("directory") + queries.close()
+        sql = queries.select('tbl_files') + queries.files_where_stmt("directory") + queries.close()
         self.__cursor.execute(sql, (dirpath,))
         return self.__cursor.fetchall()
 
     def get_files_by_suffix(self, sfx: str) -> List[Tuple[str, float]]:
-        sql = queries.select('files') + queries.files_where_stmt("suffix") + queries.close()
+        sql = queries.select('tbl_files') + queries.files_where_stmt("suffix") + queries.close()
         self.__cursor.execute(sql,  (f"%.{sfx}",))
         return self.__cursor.fetchall()
 
@@ -101,8 +101,8 @@ class DbManager:
         """
         upsert meta keys, malues and file mapping
         """    
-        sql_upd_mvals = queries.insert('meta_values') + queries.conflict_clause('meta_values') + queries.close()
-        sql_upd_mapping = queries.insert('meta_map') + queries.conflict_clause('meta_map') + queries.close()
+        # sql_upd_mvals = queries.insert('tbl_mvalues') + queries.conflict_clause('tbl_mvalues') + queries.close()
+        # sql_upd_mapping = queries.insert('tbl_mmap') + queries.conflict_clause('tbl_mmap') + queries.close()
         
         for filedata in datalist:    
             if not filedata:
@@ -112,7 +112,7 @@ class DbManager:
                 
                 #TODO remove query literal
                 self.__cursor.execute(
-                    "INSERT INTO files_metadata_map(path, mkey, mvalue) VALUES (?,?,?)",
+                    "INSERT INTO [view_data]([file_path], [mkey], [mvalue]) VALUES (?,?,?)",
                     (filename, key, value)
                 )
         self.__db.commit()
@@ -142,27 +142,27 @@ class DbManager:
         keywords = [ f'"{kw}"' if exact else f'"%{kw}%"' for kw in keywords ]
         keywords_filter = lambda column: ''.join([ f" {column} LIKE {kw}" for kw in keywords ])
 
-        sql_mvalues = "SELECT mvalue_id FROM meta_data WHERE" + keywords_filter('mvalue')
+        sql_mvalues = "SELECT [mvalue_id] FROM [view_metadata] WHERE" + keywords_filter('mvalue')
         if not categories: categories = []
-        kw_categories = set(categories).difference({'filename', 'path'})
+        kw_categories = set(categories).difference({'filename', 'file_path'}) #TODO: better options for name, path
         kw_categories = [f'"{key}"' for key in kw_categories]
         if kw_categories:
-            sql_mvalues += f" AND mkey IN ({','.join(kw_categories)})"
+            sql_mvalues += f" AND [mkey] IN ({','.join(kw_categories)})"
         sql_mvalues += ";"
                 
         self.__cursor.execute(sql_mvalues)
         mval_ids = [ str(row[0]) for row in self.__cursor.fetchall()]
         
-        self.__cursor.execute(f"SELECT file_id FROM meta_map WHERE mvalue_id IN ({','.join(mval_ids)})")
+        self.__cursor.execute(f"SELECT [file_id] FROM [meta_map] WHERE [mvalue_id] IN ({','.join(mval_ids)})")
         file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
         
-        if not categories or 'path' in categories:
-            sql_path = "SELECT id FROM files WHERE" + keywords_filter('path')
+        if not categories or 'file_path' in categories:
+            sql_path = "SELECT [file_id] FROM [tbl_files] WHERE" + keywords_filter('file_path')
             self.__cursor.execute(sql_path)
             file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
         
         if 'filename' in categories or (not categories and exact):
-            sql_fnames = "SELECT id FROM files_view WHERE" + keywords_filter('filename')
+            sql_fnames = "SELECT [file_id] FROM [files_view] WHERE" + keywords_filter('filename')
             self.__cursor.execute(sql_fnames)
             file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
     
@@ -172,7 +172,7 @@ class DbManager:
             raise ValueError("invalid mode option")
         header = "-header" if header else ""
 
-        sql = f"SELECT filename, mkey, mvalue, parent_path as dir FROM files_metadata_map WHERE file_id IN ({','.join([str(id) for id in file_ids])});"
+        sql = f"SELECT [filename], [mkey], [mvalue], [parent_path] as [dir] FROM [view_data] WHERE [file_id] IN ({','.join([str(id) for id in file_ids])});"
         command = f'sqlite3 {DB_PATH} "{sql}" -{mode} {header}'
 
         output = subprocess.check_output(command, shell=True)
