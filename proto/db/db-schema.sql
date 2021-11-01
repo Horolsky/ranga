@@ -61,7 +61,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS [idx_mkeys]
 ON [tbl_mkeys] ( [mkey] );
 
 CREATE INDEX IF NOT EXISTS [idx_mvalues] 
-ON [tbl_mvalues] ( [mvalue] ); -- TODO test performance for weak typing
+ON [tbl_mvalues] ( [mvalue] ); 
+-- TODO test performance for weak typing
 
 CREATE INDEX IF NOT EXISTS [idx_mvalues_keys] 
 ON [tbl_mvalues] ( [mkey_id] );
@@ -94,7 +95,6 @@ VIEWS
 /* metadata + key info */
 CREATE VIEW IF NOT EXISTS [view_metadata] AS
 SELECT
-    -- tbl_mvalues.mvalue_id,
     [tbl_mvalues].[mkey_id],
     [tbl_mvalues].[mvalue_id],
     [mkey],
@@ -134,8 +134,6 @@ SELECT
 
     [parent_id],
     [parent_path],
-    
-    
     
     [view_metadata].[mkey_id],
     [mkey],
@@ -179,7 +177,7 @@ BEGIN
             (SELECT [var_value] FROM [tbl_variables] WHERE [var_key] = "last_mkey_id" LIMIT 1),
             NEW.[mvalue]
         );
-    -- duplicate key-value pair is handled by separate trigger for tbl_mvalues
+    -- TODO: test duplicates handling for tbl_mvalues
 
     INSERT INTO [tbl_variables] VALUES
         (
