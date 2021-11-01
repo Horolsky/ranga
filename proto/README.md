@@ -1,7 +1,9 @@
 # ffindex prototype
 
-`ffindex` is a prototype of PAM application implemented with Python and PyQt.  
-The goal of the prototype is to give a sense of basic functionality of the desired application in a CLI.
+[__TOC__]
+
+`ffindex` is a prototype of PAM application, implemented with Python and PyQt.  
+The purpose of the prototype is to provide a CLI for the basic functionality of the desired application.
 
 ## Application design
 under the hood the `ffindex` functionality is split between the `client` and `monitor` applications.  
@@ -64,3 +66,8 @@ Advantages over the hardcoded table:
  - flexible structure, db module is independent from metadata attributes
 
 ![db schema diagram](docs/ffindex-db-schema.drawio.svg)
+
+## demo files
+
+To download media assets for testing, run [get_media.sh](../demo/get_media.sh)  
+You can add new asset urls to [links.txt](../demo/links.txt)  
