@@ -1,0 +1,12 @@
+@startuml monitor-demo
+
+' Monitor
+' DB
+
+Monitor <- DB : fetch root dirs
+hnote over Monitor : initial fs polling
+Monitor -> DB : update on modify
+hnote over Monitor: watch dirs
+Monitor -> DB : update on modify
+
+@enduml

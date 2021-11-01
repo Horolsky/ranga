@@ -46,6 +46,10 @@ ffindexer subcommands and options
     - **port**: get/set port number
     - **status**: show monitor server status
 
+## Monitor - DB communication 
+
+![monitor-db communication schema](docs/proc-monitor-db.png)
+
 ## DB schema
 
 db schema is designed as a polymorphic (i. e. attribute agnostic) 3-dimensional data registry.  
