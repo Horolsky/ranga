@@ -46,3 +46,17 @@ ffindexer subcommands and options
     - **port**: get/set port number
     - **status**: show monitor server status
 
+## DB schema
+
+db schema is designed as a polymorphic (i. e. attribute agnostic) 3-dimensional data registry.  
+The only hardcoded attributes are the fields `path` and `modified` in the `Files` table.  
+Metadata is stored in 3 tables:
+ - MetaKeys:  stores metadata keys as objects
+ - MetaData:  metadata key-to-value mapping
+ - MetaMap:   file-to-metadata mapping  
+
+Advantages over the hardcoded table:
+ - correct handling of list records (e. g. for keys like `author`, `genre`, `category`), which is not supported in SQLite     
+ - flexible structure, db module is independent from metadata attributes
+
+![db schema diagram](docs/ffindex-db-schema.drawio.svg)
