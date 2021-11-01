@@ -1,41 +1,51 @@
-#indexer commands
 search:
   help: search metadata by keyword
-  arguments:  
+  arguments:
+
     - names: [--keywords, -k]
       required: Yes
-      nargs: '+' # at least one
+      nargs: '+'
       help: "keywords: filenames, metadata values"
       metavar: <kw>
+
     - names: [--category, -c]
       nargs: '+'
       help: specific categories by which to search (filename, path, <metadata key>)
       metavar: <cat>
+
     - names: [--exact, -e]
       action: 'store_true'
       help: search only for whole word matches
+
     - names: [--mode, -m]
       choices: [ csv, column, html, line, list ]
       help: sqlite3 output mode (csv, column, html, line, list)
       metavar: <mode>
+
     - names: [--headless]
       action: 'store_true'
       help: exclude header from the output
+
 show:
   help: show table from database
   arguments:
+
     - names: [table]
       help: database table or view
       metavar: <table>
+
     - names: [--mode, -m]
       choices: [ csv, column, html, line, list ]
       help: sqlite3 output mode (csv, column, html, line, list)
       metavar: <mode>
+
     - names: [--headless]
       action: 'store_true'
       help: exclude header from the output
+
 tables:
   help: list table names
+
 monitor:
   help: local file system monitor server
   arguments:
