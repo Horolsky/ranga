@@ -153,7 +153,7 @@ class DbManager:
         self.__cursor.execute(sql_mvalues)
         mval_ids = [ str(row[0]) for row in self.__cursor.fetchall()]
         
-        self.__cursor.execute(f"SELECT [file_id] FROM [meta_map] WHERE [mvalue_id] IN ({','.join(mval_ids)})")
+        self.__cursor.execute(f"SELECT [file_id] FROM [tbl_mmap] WHERE [mvalue_id] IN ({','.join(mval_ids)})")
         file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
         
         if not categories or 'file_path' in categories:
@@ -162,7 +162,7 @@ class DbManager:
             file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
         
         if 'filename' in categories or (not categories and exact):
-            sql_fnames = "SELECT [file_id] FROM [files_view] WHERE" + keywords_filter('filename')
+            sql_fnames = "SELECT [file_id] FROM [view_files] WHERE" + keywords_filter('filename')
             self.__cursor.execute(sql_fnames)
             file_ids += [ str(row[0]) for row in self.__cursor.fetchall()]
     
