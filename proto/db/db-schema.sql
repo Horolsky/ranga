@@ -87,35 +87,6 @@ BEGIN
     DELETE FROM [tbl_variables] WHERE [var_key]=NEW.[var_key];
 END;
 
-
--- CREATE TRIGGER IF NOT EXISTS [mkeys_lastrow] 
--- AFTER INSERT ON [tbl_files]
--- BEGIN
-    -- INSERT INTO [tbl_variables]
-    -- VALUES ("last_file_id", NEW.file_id);
--- END;
--- 
--- CREATE TRIGGER IF NOT EXISTS [mkeys_lastrow] 
--- AFTER INSERT ON [tbl_mkeys]
--- BEGIN
-    -- INSERT INTO [tbl_variables]
-    -- VALUES ("last_mkey_id", NEW.mkey_id);
--- END;
--- 
--- CREATE TRIGGER IF NOT EXISTS [mvalues_lastrow] 
--- AFTER INSERT ON [tbl_mvalues]
--- BEGIN
-    -- INSERT INTO [tbl_variables]
-    -- VALUES ("last_mvalue_id", NEW.mvalue_id);
--- END;
--- 
--- CREATE TRIGGER IF NOT EXISTS [mmap_lastrow] 
--- AFTER INSERT ON [tbl_mmap]
--- BEGIN
-    -- INSERT INTO [tbl_variables]
-    -- VALUES ("last_mmap_row", NEW.rowid);
--- END;
-
 /*
 VIEWS
 */
