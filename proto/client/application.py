@@ -4,8 +4,8 @@ import logging
 import sys
 
 from proto.config.configuration import get_user_config
-from proto.indexer.cmd_exec import execute_command
-from proto.indexer.cli_parser import build_argparser
+from proto.client.cmd_exec import execute_command
+from proto.client.cli_parser import build_argparser
 
 USR_CFG = get_user_config() 
 LOGGING_CFG : dict = USR_CFG['logging']

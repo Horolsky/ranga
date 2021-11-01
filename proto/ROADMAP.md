@@ -8,7 +8,7 @@ The idea for current iteration is to complete in CLI the two basic functionaliti
 
 ## CLI design
 
-CLI codegeneration source: [cli_schema.yml](indexer/cli_schema.yml)
+CLI codegeneration source: [cli_schema.yml](client/cli_schema.yml)
 
 ### comprehensive CLI tree
 ffindexer subcommands and options
