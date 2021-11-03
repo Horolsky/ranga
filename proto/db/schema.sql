@@ -1,8 +1,6 @@
 PRAGMA foreign_keys = ON;
 
-/* 
-DATA TABLES
-*/
+-- DATA TABLES
 
 /* file registry */
 CREATE TABLE IF NOT EXISTS [tbl_files] (
@@ -28,17 +26,17 @@ CREATE TABLE IF NOT EXISTS [tbl_mkeys] (
 /* file metadata store */
 CREATE TABLE IF NOT EXISTS [tbl_mvalues] (
     [mvalue_id] INTEGER PRIMARY KEY,
-    [mkey_id] INTEGER,
+    [mkey_id] INTEGER NOT NULL,
     [mvalue] ANY, -- weak typing
     FOREIGN KEY( [mkey_id] ) 
         REFERENCES [tbl_mkeys]( [mkey_id] ) 
         ON DELETE CASCADE
-);
+);    
 
 /* file to metadata map (M:M) */
 CREATE TABLE IF NOT EXISTS [tbl_mmap] (
-    [file_id] INTEGER,
-    [mvalue_id] INTEGER,
+    [file_id] INTEGER NOT NULL,
+    [mvalue_id] INTEGER NOT NULL,
     FOREIGN KEY( [file_id] ) 
         REFERENCES [tbl_files]( [file_id] ) 
         ON DELETE CASCADE,
@@ -46,10 +44,8 @@ CREATE TABLE IF NOT EXISTS [tbl_mmap] (
         REFERENCES [tbl_mvalues]( [mvalue_id] ) 
         ON DELETE CASCADE
 );
-
-/* 
-DATA INDICI
-*/
+ 
+-- DATA INDICI
 
 CREATE INDEX IF NOT EXISTS [idx_files_paths] 
 ON [tbl_files] ( [file_path] );
@@ -73,27 +69,11 @@ ON [tbl_mmap] ( [file_id] );
 CREATE INDEX IF NOT EXISTS [idx_map_values] 
 ON [tbl_mmap] ( [mvalue_id] );
 
-/*
-UTILITY var TABLE & TRIGGERS
-*/
 
-CREATE TABLE IF NOT EXISTS [tbl_variables] (
-    [var_key] VARCHAR(16) UNIQUE,
-    [var_value] ANY
-);
-
-CREATE TRIGGER IF NOT EXISTS [trg_variables_setter]
-    BEFORE INSERT ON [tbl_variables]
-BEGIN
-    DELETE FROM [tbl_variables] WHERE [var_key]=NEW.[var_key];
-END;
-
-/*
-VIEWS
-*/
+-- DATA VIEWS
 
 /* metadata + key info */
-CREATE VIEW IF NOT EXISTS [view_metadata] AS
+CREATE VIEW IF NOT EXISTS [view_meta] AS
 SELECT
     [tbl_mvalues].[mkey_id],
     [tbl_mvalues].[mvalue_id],
@@ -106,7 +86,7 @@ FROM
     JOIN [tbl_mvalues] ON [tbl_mvalues].[mkey_id] = [tbl_mkeys].[mkey_id];
 
 /* parent path and filename map, does not include entry nodes*/
-CREATE VIEW IF NOT EXISTS view_files AS
+CREATE VIEW IF NOT EXISTS [view_files] AS
 SELECT 
     [tmp_1].[file_id],
     SUBSTR(
@@ -135,79 +115,104 @@ SELECT
     [parent_id],
     [parent_path],
     
-    [view_metadata].[mkey_id],
+    [view_meta].[mkey_id],
     [mkey],
     [mtype],
     [mkey_descr],
     
-    [view_metadata].[mvalue_id],
+    [view_meta].[mvalue_id],
     [mvalue]
        
-FROM [view_metadata] 
-    JOIN [tbl_mmap] ON [view_metadata].[mvalue_id] = [tbl_mmap].[mvalue_id] 
+FROM [view_meta] 
+    JOIN [tbl_mmap] ON [view_meta].[mvalue_id] = [tbl_mmap].[mvalue_id] 
     JOIN [view_files] ON [tbl_mmap].[file_id] = [view_files].[file_id];
 
-/*
-DATA TRIGGERS
-*/
 
-/* put parent_id as path, replace with file_id */
+-- UTILITY
 
-CREATE TRIGGER IF NOT EXISTS  [trg_data_setter]
-    INSTEAD OF INSERT ON [view_data]
+CREATE TABLE IF NOT EXISTS [tbl_variables] (
+    [var_key] VARCHAR(16) UNIQUE,
+    [var_value] ANY
+);
+
+CREATE TRIGGER IF NOT EXISTS [trg_variables_setter]
+    BEFORE INSERT ON [tbl_variables]
 BEGIN
-    INSERT INTO [tbl_mkeys]( [mkey], [mtype], [mkey_descr] )
-    VALUES(
-        NEW.[mkey], 
-        NEW.[mtype], 
-        NEW.[mkey_descr]
-        )
-        ON CONFLICT( [mkey] ) DO UPDATE SET 
-        [mtype] = CASE WHEN EXCLUDED.[mtype] = NULL THEN [mtype] ELSE EXCLUDED.[mtype] END,
-        [mkey_descr] = CASE WHEN EXCLUDED.[mkey_descr] = NULL THEN [mkey_descr] ELSE EXCLUDED.[mkey_descr] END;
-
-    INSERT INTO [tbl_variables] VALUES
-        (
-            "last_mkey_id", 
-            (SELECT [mkey_id] FROM [tbl_mkeys] WHERE [mkey] = NEW.[mkey] LIMIT 1)
-        );
-
-    INSERT INTO [tbl_mvalues]( [mkey_id], [mvalue] ) VALUES
-        (
-            (SELECT [var_value] FROM [tbl_variables] WHERE [var_key] = "last_mkey_id" LIMIT 1),
-            NEW.[mvalue]
-        );
-    -- TODO: test duplicates handling for tbl_mvalues
-
-    INSERT INTO [tbl_variables] VALUES
-        (
-            "last_mvalue_id", 
-            (SELECT [mvalue_id] FROM [tbl_mvalues] 
-                WHERE [mkey_id] = (SELECT [mkey_id] FROM [tbl_mkeys] WHERE [mkey] = NEW.[mkey] LIMIT 1)
-                AND [mvalue] = NEW.[mvalue] 
-                LIMIT 1)
-        );
-
-    INSERT INTO [tbl_variables] VALUES
-        (
-            "last_file_id",
-            (SELECT [file_id] FROM [tbl_files] WHERE [file_path] = NEW.[file_path] LIMIT 1)
-        );
-
-    INSERT INTO tbl_mmap( [file_id], [mvalue_id] ) VALUES
-        (
-            (SELECT [var_value] FROM [tbl_variables] WHERE [var_key] = "last_file_id" LIMIT 1),
-            (SELECT [var_value] FROM [tbl_variables] WHERE [var_key] = "last_mvalue_id" LIMIT 1)
-        );
+    DELETE FROM [tbl_variables] WHERE [var_key]=NEW.[var_key];
 END;
 
-/* put parent_id as path, replace with file_id */
-CREATE TRIGGER IF NOT EXISTS [trg_files_setter] 
-    AFTER INSERT ON [tbl_files]
-    WHEN TYPEOF(NEW.[parent_id] ) <> 'INTEGER'
+-- INSERTION FILTERS
+
+CREATE TRIGGER IF NOT EXISTS [trg_mvalues_filter]
+BEFORE INSERT ON [tbl_mvalues]
+    WHEN EXISTS (
+        SELECT mkey_id FROM [tbl_mvalues] 
+        WHERE [mkey_id] = NEW.[mkey_id] 
+        AND [mvalue] = NEW.[mvalue])
 BEGIN
-    UPDATE [tbl_files]
-    SET
-    [parent_id] = (SELECT [file_id] FROM [tbl_files] WHERE [file_path] = NEW.[parent_id] LIMIT 1)
-    WHERE [file_id] = NEW.[file_id];
+    SELECT RAISE(IGNORE);
+END;
+
+CREATE TRIGGER IF NOT EXISTS [trg_mmap_filter]
+BEFORE INSERT ON [tbl_mmap]
+    WHEN EXISTS (
+        SELECT mvalue_id FROM [tbl_mmap] 
+        WHERE [file_id] = NEW.[file_id] 
+        AND [mvalue_id] = NEW.[mvalue_id])
+BEGIN
+    SELECT RAISE(IGNORE);
+END;
+
+-- SETTERS
+
+CREATE TRIGGER IF NOT EXISTS [trg_file_setter]
+INSTEAD OF INSERT ON [view_files]
+BEGIN
+    INSERT INTO [tbl_files] VALUES
+    (
+        NULL,
+        NEW.[file_path],
+        CASE 
+            WHEN NEW.[parent_id] IS NULL AND NEW.[parent_path] IS NOT NULL
+            THEN (
+                SELECT [file_id] FROM [tbl_files]
+                WHERE [file_path] = NEW.[parent_path]
+                LIMIT 1)
+            ELSE NEW.[parent_id] END
+        ,
+        NEW.[modified],
+        NEW.[is_dir]
+    )
+    ON CONFLICT( [file_path] ) DO UPDATE SET
+        [modified] = NEW.[modified]
+        WHERE NEW.[modified] > [tbl_files].[modified];
+END;
+
+CREATE TRIGGER IF NOT EXISTS [trg_mmap_setter]
+INSTEAD OF INSERT ON [view_data]
+-- (file_id, mkey, mvalue) VALUES
+BEGIN
+    INSERT OR IGNORE INTO [tbl_mkeys] VALUES
+    (
+        NULL,
+        NEW.[mkey],
+        TYPEOF(NEW.[mvalue]),
+        NULL
+    );    
+
+    INSERT OR IGNORE INTO [tbl_mvalues] VALUES
+    (
+        NULL,
+        (SELECT [mkey_id] FROM [tbl_mkeys] 
+        WHERE [mkey] = NEW.[mkey] LIMIT 1),
+        NEW.[mvalue]
+    );    
+
+    INSERT INTO [tbl_mmap] VALUES
+    (
+        NEW.[file_id],
+        (SELECT [mvalue_id] FROM [view_meta] 
+        WHERE [mvalue] = NEW.[mvalue] 
+        AND [mkey] = NEW.[mkey] LIMIT 1)
+    );    
 END;

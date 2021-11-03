@@ -6,37 +6,34 @@ from typing import List, Set
 from PyQt5.QtCore import QFileSystemWatcher
 
 from proto.db.manager import DbManager
+from proto.db.types import *
 from proto.monitor.dumper import get_data
 
-# tuple indexation for file record
-PATH, PARENT, MODIFIED, IS_DIR = 0,1,2,3
-EMPTY_RECORD = ("",0,0,0)
-
 class Monitor:
-    
+
     @staticmethod
-    def walk_dir( directory: str, recursive: bool) -> List[tuple]:
+    def walk_dir( directory: str, recursive: bool) -> List[File]:
 
         if not isdir(directory): 
             return []
             
-        files = [(directory, None, getmtime(directory), 1)]
+        files = [File(None, directory, None, getmtime(directory), True)]
 
         if not recursive:
-            is_dir = lambda f: 1 if isdir(f) else 0
             for entry in listdir(directory):
                 path = joinpath(directory, entry)
-                files.append((path, directory, getmtime(path), is_dir(path)))
+                files.append(File(None, path, directory, getmtime(path), isdir(path)))
         else:
             for root, dirnames, filenames in walk(directory, topdown=False):
                 for dname in dirnames:
                     dirpath = joinpath(root, dname)
                     modified = getmtime(dirpath)
-                    files.append((dirpath, root, modified, 1))
+                    files.append(File(None, dirpath, root, modified, True))
+
                 for fname in filenames:
                     filepath = joinpath(root, fname)
                     modified = getmtime(filepath)
-                    files.append((filepath, root, modified, 0))
+                    files.append(File(None, filepath, root, modified, False))
                 
         return files
         
@@ -46,33 +43,45 @@ class Monitor:
         self.watchdog.directoryChanged.connect(lambda path: self.update( {path} ))
         
     def update(self, nodes: Set[str], deep: bool = False) -> None:
-        logging.info(f"update dirs: {nodes}")
+        filtered = list(set(nodes))
+        filtered.sort()
+        filtered = filtered[:1] + [ path for i, path in enumerate(filtered[1:]) if path.find(filtered[i-1]) == -1 ]
+        nodes = set(filtered)
 
+        if not nodes: return
+        logging.info(f"updating dirs: {nodes}")
 
-        local_files = { file[PATH]: file for node in nodes for file in Monitor.walk_dir(node, deep) }
-        db_records = { record[PATH]: record for node in nodes for record in self.db.get_files_in_dir(node) }
+        fs_records = { file.file_path: file for node in nodes for file in Monitor.walk_dir(node, deep) }
+        db_records = { file.file_path: file for node in nodes for file in self.db.get_files_in_dir(node) }
 
-        to_remove = { (path,) for path in set(db_records) - set(local_files) }
-        to_update = [ file for path, file in local_files.items() if file[MODIFIED] > db_records.get(path, EMPTY_RECORD)[MODIFIED] ]
-        to_watch = { path for path in local_files if path not in db_records and local_files[path][IS_DIR] and path not in nodes }
+        db_paths = set(db_records)
+        fs_paths = set(fs_records)
+        paths_to_delete = db_paths - fs_paths
+        paths_to_insert = fs_paths - db_paths
+        paths_to_update = fs_paths & db_paths
 
-        if to_remove: self.db.remove_files(to_remove)
-        if to_update: 
-            self.db.update_files(to_update)
-            self.upd_meta(to_update)
+        files_to_insert = { fs_records[path] for path in paths_to_insert }
+        files_to_update = { fs_records[path] for path in paths_to_update }
+        
+        files_to_watch =  { path for path, file in fs_records.items() if file.is_dir and path not in nodes }
+        
+        if paths_to_delete: self.db.remove_files(paths_to_delete)
+        if files_to_insert: self.db.insert_files(files_to_insert)
+        if files_to_update: self.db.update_files(files_to_update)
+        
+        updated_files = self.db.get_files_by_paths(list(paths_to_insert | paths_to_update))   #TODO: optimise?
+        metamap = []
+        for file in updated_files:
+            data = get_data(file.file_path)
+            data.pop('filename', None)
+            for key, value in data.items():
+                metamap.append((file.file_id, key, value))
+        if metamap: self.db.insert_metadata(metamap)
 
-        dir_nodes = [ node for node in nodes if isdir(node) ]
-        if dir_nodes: self.watchdog.addPaths(dir_nodes)
-        if to_watch: 
-            self.watchdog.addPaths(to_watch)
-            self.update(to_watch, True)
-        # for path in to_watch:
-            # self.update(path, True)
-    
-    #TODO: use threadpool for this
-    def upd_meta(self, files: List[tuple]) -> None:
-        data = [ get_data(file[PATH]) for file in files if not file[IS_DIR] ]
-        self.db.update_meta(data)
+        self.watchdog.addPaths(nodes)
+        if files_to_watch: 
+            self.watchdog.addPaths(files_to_watch)
+            self.update(files_to_watch, True)
 
     def unwatch(self, paths):
         self.watchdog.removePaths(paths)

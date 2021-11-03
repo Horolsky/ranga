@@ -63,7 +63,11 @@ class Server(QObject):
                 args = DbManager().get_root_dirs()
             logging.debug("monitor: adding records")
             logging.debug(args)
-            self.monitor.update(set(args))
+
+            inserted = self.db.insert_roots(args)
+            logging.debug("monitor: inserted")
+            logging.debug(inserted)
+            self.monitor.update(inserted)
             response = "fs updated"
 
         elif command == 'remove':

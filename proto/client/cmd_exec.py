@@ -92,7 +92,12 @@ def exec_monitor(**kwargs):
             conn.close()
         elif cmd == 'add':
             with DbManager() as db:
-                db.add_roots(arg)
+                inserted = db.insert_roots(arg)
+                if inserted:
+                    print("added root directories:")
+                    print('\n'.join(inserted))
+                else:
+                    print("nothing to add")
         elif cmd == 'remove':
             with DbManager() as db:
                 db.remove_files({(path,) for path in arg})
