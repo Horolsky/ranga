@@ -70,7 +70,7 @@ def exec_monitor(**kwargs):
     elif cmd == 'status':
         running = serv_is_running()
         port = PORT
-        print(f"running:\t{running}\nport:\t\t{port}")
+        print(f"server running: {running}, port: {port}")
 
     elif cmd == 'run':
         run_fork_proc(monitor_run)

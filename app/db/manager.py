@@ -1,6 +1,7 @@
 from genericpath import getmtime
 import logging
 import sqlite3
+from os import makedirs
 from os.path import dirname, realpath, isdir
 from sqlite3.dbapi2 import Connection, Cursor
 from typing import Dict, Iterable, List, Sequence, Set, Tuple
@@ -11,7 +12,8 @@ from app.db.types import *
 
 SCRIPT_DIR = dirname(realpath(__file__))
 HOME_DIR = str(Path.home())
-DB_PATH = f'{HOME_DIR}/.pam-index.db' #TODO move this to yml config
+APP_DATA = f'{HOME_DIR}/.ffindex'
+DB_PATH = f'{HOME_DIR}/.ffindex/index.db' #TODO move this to yml config
 DB_SCHEMA = f'{SCRIPT_DIR}/schema.sql'
 
 
@@ -25,6 +27,8 @@ class DbManager:
     __cursor: Cursor = None
     
     def __init__(self) -> None:
+        if not isdir(APP_DATA):
+            makedirs(APP_DATA)
         self.__db: Connection = sqlite3.connect(DB_PATH)
         self.__cursor: Cursor = self.__db.cursor()
         self.load_schema()
@@ -141,11 +145,10 @@ class DbManager:
 # MUTATIONS
     def delete_files(self, paths: Set[str]) -> None:
         qmarks = ','.join( ['?'] * len(paths) )
-        paths = {(path,) for path in paths}
         sql = f"DELETE FROM [tbl_files] WHERE [file_path] IN ({qmarks});"
-        self.__cursor.executemany(sql, list(paths))
+        self.__cursor.execute(sql, list(paths))
         self.__db.commit()
-
+        
     def insert_files(self, files: List[File]):
         """
         insert or update records into files table  
