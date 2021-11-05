@@ -73,7 +73,7 @@ class Server(QObject):
         elif command == 'remove':
             self.monitor.unwatch(args)
             logging.debug("monitor: removing records")
-            self.db.remove_files({(path,) for path in args})
+            self.db.delete_files({(path,) for path in args})
             response = "files removed"
 
         client_connection.disconnected.connect(client_connection.deleteLater)

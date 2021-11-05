@@ -100,7 +100,7 @@ def exec_monitor(**kwargs):
                     print("nothing to add")
         elif cmd == 'remove':
             with DbManager() as db:
-                db.remove_files({(path,) for path in arg})
+                db.delete_files({(path,) for path in arg})
         elif cmd == 'update':
             print("monitor is not launched")    
 

@@ -65,7 +65,7 @@ class Monitor:
         
         files_to_watch =  { path for path, file in fs_records.items() if file.is_dir and path not in nodes }
         
-        if paths_to_delete: self.db.remove_files(paths_to_delete)
+        if paths_to_delete: self.db.delete_files(paths_to_delete)
         if files_to_insert: self.db.insert_files(files_to_insert)
         if files_to_update: self.db.update_files(files_to_update)
         
