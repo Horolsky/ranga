@@ -76,11 +76,11 @@ ON [tbl_mmap] ( [mvalue_id] );
 CREATE VIEW IF NOT EXISTS [view_meta] AS
 SELECT
     [tbl_mvalues].[mkey_id],
-    [tbl_mvalues].[mvalue_id],
     [mkey],
     [mtype],
-    [mvalue],
-    [mkey_descr]
+    [mkey_descr],
+    [tbl_mvalues].[mvalue_id],
+    [mvalue]
 FROM
     [tbl_mkeys]
     JOIN [tbl_mvalues] ON [tbl_mvalues].[mkey_id] = [tbl_mkeys].[mkey_id];
@@ -88,15 +88,25 @@ FROM
 /* parent path and filename map, does not include entry nodes*/
 CREATE VIEW IF NOT EXISTS [view_files] AS
 SELECT 
+/*
+file_id
+file_path
+parent_id
+modified
+is_dir
+--
+filename
+parent_path
+*/
     [tmp_1].[file_id],
+    [tmp_1].[file_path],
+    [tmp_1].[parent_id],
+    [tmp_1].[modified],
+    [tmp_1].[is_dir],
     SUBSTR(
         [tmp_1].[file_path], LENGTH( [tmp_2].[file_path] ) + 2
         ) as [filename],
-    [tmp_1].[parent_id],
-    [tmp_2].[file_path] as [parent_path],
-    [tmp_1].[file_path],
-    [tmp_1].[modified],
-    [tmp_1].[is_dir]
+    [tmp_2].[file_path] as [parent_path]
 FROM
    (SELECT * FROM [tbl_files] ) as [tmp_1]
    JOIN
@@ -108,20 +118,20 @@ FROM
 CREATE VIEW IF NOT EXISTS [view_data] AS
 SELECT
     [view_files].[file_id],
-    [filename],
-    [file_path],
-    [modified],
-
-    [parent_id],
-    [parent_path],
+    [view_files].[file_path],
+    [view_files].[parent_id],
+    [view_files].[modified],
+    [view_files].[is_dir],
+    [view_files].[filename],
+    [view_files].[parent_path],
     
     [view_meta].[mkey_id],
-    [mkey],
-    [mtype],
-    [mkey_descr],
+    [view_meta].[mkey],
+    [view_meta].[mtype],
+    [view_meta].[mkey_descr],
     
     [view_meta].[mvalue_id],
-    [mvalue]
+    [view_meta].[mvalue]
        
 FROM [view_meta] 
     JOIN [tbl_mmap] ON [view_meta].[mvalue_id] = [tbl_mmap].[mvalue_id] 

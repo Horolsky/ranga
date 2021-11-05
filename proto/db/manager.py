@@ -1,8 +1,9 @@
+from genericpath import getmtime
 import logging
 import sqlite3
 from os.path import dirname, realpath, isdir
 from sqlite3.dbapi2 import Connection, Cursor
-from typing import Dict, Iterable, List, Set, Tuple
+from typing import Dict, Iterable, List, Sequence, Set, Tuple
 from pathlib import Path
 import subprocess
 
@@ -15,6 +16,7 @@ DB_SCHEMA = f'{SCRIPT_DIR}/schema.sql'
 
 
 class DbManager:
+
     __db: Connection = None
     __cursor: Cursor = None
     
@@ -45,30 +47,29 @@ class DbManager:
     def get_files_by_paths(self, paths: Iterable[str]) -> Set[File]:
         if not paths: return set()
         qmarks = ','.join( ['?'] * len(paths) )
-        select_sql = f"SELECT * FROM [tbl_files] WHERE [file_path] IN ({qmarks});"
-        self.__cursor.execute(select_sql, paths) 
-        rows = self.__cursor.fetchall()
-        return { File(*row) for row in rows }
+        select_sql = "SELECT * FROM [view_files] "\
+            f"WHERE [file_path] IN ({qmarks});"
+        self.__cursor.execute(select_sql, list(paths)) # WTF?
+        return { File(*row) for row in self.__cursor.fetchall() }
 
-    def get_files_in_dir(self, dirpath: str) -> List[File]:
+    def get_files_by_parents(self, paths: Iterable[str]) -> Set[File]:
+        if not paths: return set()
+        qmarks = ','.join( ['?'] * len(paths) )
         sql = \
-            "SELECT * FROM [tbl_files] " \
-            "WHERE [parent_id] = "\
-            "(SELECT [file_id] FROM [tbl_files] WHERE [file_path] = ? LIMIT 1);"
-        
-        self.__cursor.execute(sql, (dirpath,))
-        result = self.__cursor.fetchall()
-        return [ File(*file) for file in result ]
+            "SELECT * FROM [view_files] " \
+            f"WHERE [parent_path] IN ({qmarks});"
+        self.__cursor.execute(sql, list(paths)) 
+        return { File(*row) for row in self.__cursor.fetchall() }
 
     def get_root_dirs(self) -> Set[str]:
-        sql = "SELECT [file_path] FROM [tbl_files] WHERE [parent_id] IS NULL;"
+        sql = "SELECT * FROM [tbl_files] WHERE [parent_id] IS NULL;"
         self.__cursor.execute(sql)
-        return { row[0] for row in self.__cursor.fetchall() }
+        return { File(*row).file_path for row in self.__cursor.fetchall() } 
 
-    def get_tablenames(self) -> List[str]:
+    def get_tablenames(self) -> Set[str]:
         sql = 'SELECT [name] FROM sqlite_master WHERE [type] IN ("table", "view");'
         self.__cursor.execute(sql)
-        tables = [ row[0] for row in self.__cursor.fetchall() ]
+        tables = { row[0] for row in self.__cursor.fetchall() }
 
         return tables
 
@@ -81,7 +82,6 @@ class DbManager:
             raise ValueError("invalid mode option")
 
         sql = f"SELECT * FROM {table};"
-        #header = "-header" if mode == "column" else "" 
         header = "-header" if header else ""
         command = f'sqlite3 {DB_PATH} "{sql}" -{mode} {header}'
 
@@ -136,7 +136,9 @@ class DbManager:
 
 # MUTATIONS
     def delete_files(self, paths: Set[str]) -> None:
-        sql = "DELETE FROM [tbl_files] WHERE [file_path] IN (?);"
+        qmarks = ','.join( ['?'] * len(paths) )
+        paths = {(path,) for path in paths}
+        sql = f"DELETE FROM [tbl_files] WHERE [file_path] IN ({qmarks});"
         self.__cursor.executemany(sql, paths)
         self.__db.commit()
 
@@ -146,19 +148,7 @@ class DbManager:
         """    
         qmarks = ','.join( ['?'] * 7 )
         insert_sql = f"INSERT INTO [view_files] VALUES ({qmarks});"
-           
-        parent_id = lambda v: v if type(v) is int else None
-        parent_path = lambda v: v if type(v) is str else None
-        _files = [(
-            file.file_id,               # file_id
-            None,                       # filename
-            parent_id(file.parent),     # parent_id
-            parent_path(file.parent),   # parent_path
-            file.file_path,             # file_path
-            file.modified,              # modified
-            file.is_dir                 # is_dir
-            ) for file in files]
-        self.__cursor.executemany(insert_sql, _files) 
+        self.__cursor.executemany(insert_sql, files) 
         self.__db.commit()
 
     def insert_metadata(self, values: Iterable[MData]):
@@ -167,38 +157,25 @@ class DbManager:
         """    
         qmarks = ','.join( ['?'] * len(MData._fields) )
 
-        insert_sql = f"INSERT OR IGNORE INTO [view_data] ([file_id], [mkey], [mvalue]) VALUES ({qmarks});"
+        insert_sql = f"INSERT OR IGNORE INTO [view_data] "\
+             f"([file_id], [mkey], [mvalue]) VALUES ({qmarks});"
 
         self.__cursor.executemany(insert_sql, values)
         self.__db.commit()
     
-    def insert_roots(self, paths: List[str]) -> Set[str]:
+    def insert_roots(self, roots: Set[str]) -> Set[str]:
         """
         add root directories records
         """    
-        
         sql = "SELECT [file_path] FROM [tbl_files] WHERE [is_dir] IS 1;"
         self.__cursor.execute(sql)
         db_records = { row[0] for row in self.__cursor.fetchall() }
-        filtered = { path for path in paths if isdir(path) } - db_records
-        files = {File(None, path, None, 0, 1) for path in filtered}
-        # TODO filter invalid roots
+        filtered_paths = { path for path in roots if isdir(path) and path not in db_records }
+        files = { File(None, path, None, getmtime(path), True) for path in filtered_paths }
         self.insert_files(files)
-        return filtered
+        return filtered_paths
 
-    def insert_values(self, table: str, values: Iterable[tuple]):
-        """
-        insert or update records into mvalues table
-        """    
-        if not values: return
-        qmarks = ','.join( ['?'] * len(values[0]) )
-
-        insert_sql = f"INSERT OR IGNORE INTO [{table}] VALUES ({qmarks});"
-
-        self.__cursor.executemany(insert_sql, values) 
-        self.__db.commit()
-
-    def update_files(self, files: List[File]):
+    def update_files(self, files: Set[File]):
         """
         update records in files table
         """    

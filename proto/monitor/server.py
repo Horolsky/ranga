@@ -27,10 +27,10 @@ class Server(QObject):
             raise ConnectionError(errmsg)
         self.tcp_server.newConnection.connect(self.on_connect)
         
-        paths_to_watch = self.db.get_root_dirs()
+        dirs_to_watch = self.db.get_root_dirs()
         self.monitor = Monitor(self.db)
         logging.info("monitor: server launched")
-        self.monitor.update(paths_to_watch)
+        self.monitor.update(dirs_to_watch)
         logging.info("monitor: initial update done")
 
     def on_connect(self):
@@ -47,7 +47,7 @@ class Server(QObject):
         try:
             req_obj = json.loads(request)
             command = req_obj['command']
-            args = req_obj['args']
+            args = set(req_obj['args'])
         except:
             logging.error("monitor: invalid request object")
 
@@ -64,16 +64,16 @@ class Server(QObject):
             logging.debug("monitor: adding records")
             logging.debug(args)
 
-            inserted = self.db.insert_roots(args)
+            inserted_files = self.db.insert_roots(args)
             logging.debug("monitor: inserted")
-            logging.debug(inserted)
-            self.monitor.update(inserted)
+            logging.debug(inserted_files)
+            self.monitor.update(inserted_files)
             response = "fs updated"
 
         elif command == 'remove':
             self.monitor.unwatch(args)
             logging.debug("monitor: removing records")
-            self.db.delete_files({(path,) for path in args})
+            self.db.delete_files(args)
             response = "files removed"
 
         client_connection.disconnected.connect(client_connection.deleteLater)

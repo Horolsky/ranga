@@ -3,47 +3,23 @@ from typing import Any, NamedTuple
 
 class File(NamedTuple):
     """
-    file_id : int
-    file_path : str
-    parent : int for id or str for path
-    modified : float
-    is_dir : bool
+    records from files_view  
+    
+    file_id: int
+    file_path: str
+    parent_id: int
+    modified: float
+    is_dir: bool
+    filename: str
+    parent_path: str
     """
-    file_id : int
-    file_path : str
-    parent : Any
-    modified : float
-    is_dir : bool
-
-class MKey(NamedTuple):
-    """
-    mkey_id : int
-    mkey : str
-    mtype : str
-    mkey_descr : str
-    """
-    mkey_id : int
-    mkey : str
-    mtype : str
-    mkey_descr : str
-
-class MValue(NamedTuple):
-    """
-    mvalue_id : int
-    mkey_id : int
-    mvalue : Any
-    """
-    mvalue_id : int
-    mkey_id : int
-    mvalue : Any
-
-class MMap(NamedTuple):
-    """
-    file_id : int
-    mvalue_id : int
-    """
-    file_id : int
-    mvalue_id : int
+    file_id: int
+    file_path: str
+    parent_id: int
+    modified: float
+    is_dir: bool
+    filename: str = None
+    parent_path: str = None
 
 class MData(NamedTuple):
     """

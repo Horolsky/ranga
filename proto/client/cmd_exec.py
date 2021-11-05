@@ -83,16 +83,16 @@ def exec_monitor(**kwargs):
         conn.close()
 
     elif cmd in ('add', 'remove', 'update'):
-        arg = list({ abspath(path) for path in arg })
+        paths = { abspath(path) for path in arg }
         if serv_is_running():
-            req_obj = bytes(json.dumps({ "command": cmd, "args": arg }), encoding='ascii')
+            req_obj = bytes(json.dumps({ "command": cmd, "args": list(paths) }), encoding='ascii')
             logging.debug(f"indexer req_obj: {req_obj}")
             conn = Client((HOST, PORT))
             conn.send_bytes(req_obj)
             conn.close()
         elif cmd == 'add':
             with DbManager() as db:
-                inserted = db.insert_roots(arg)
+                inserted = db.insert_roots(paths)
                 if inserted:
                     print("added root directories:")
                     print('\n'.join(inserted))
@@ -100,7 +100,7 @@ def exec_monitor(**kwargs):
                     print("nothing to add")
         elif cmd == 'remove':
             with DbManager() as db:
-                db.delete_files({(path,) for path in arg})
+                db.delete_files(paths)
         elif cmd == 'update':
             print("monitor is not launched")    
 
