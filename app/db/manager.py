@@ -143,7 +143,7 @@ class DbManager:
         qmarks = ','.join( ['?'] * len(paths) )
         paths = {(path,) for path in paths}
         sql = f"DELETE FROM [tbl_files] WHERE [file_path] IN ({qmarks});"
-        self.__cursor.executemany(sql, paths)
+        self.__cursor.executemany(sql, list(paths))
         self.__db.commit()
 
     def insert_files(self, files: List[File]):

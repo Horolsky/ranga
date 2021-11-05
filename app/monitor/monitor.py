@@ -59,7 +59,7 @@ class Monitor:
                         file_id     = None,
                         file_path   = filepath,
                         parent_id   = None,
-                        modified    = getmtime(dirpath),
+                        modified    = getmtime(filepath),
                         is_dir      = False,
                         filename    = fname,
                         parent_path = root
