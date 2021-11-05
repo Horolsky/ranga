@@ -7,7 +7,7 @@ from typing import Dict, Iterable, List, Sequence, Set, Tuple
 from pathlib import Path
 import subprocess
 
-from proto.db.types import *
+from app.db.types import *
 
 SCRIPT_DIR = dirname(realpath(__file__))
 HOME_DIR = str(Path.home())
@@ -16,6 +16,10 @@ DB_SCHEMA = f'{SCRIPT_DIR}/schema.sql'
 
 
 class DbManager:
+    
+    # @staticmethod
+    # def row_factory_files(cursor: Cursor, row: Sequence):
+        # return File(*row)
 
     __db: Connection = None
     __cursor: Cursor = None

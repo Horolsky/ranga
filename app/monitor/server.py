@@ -4,8 +4,8 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtNetwork import QHostAddress, QTcpServer
 import json
 
-from proto.db.manager import DbManager
-from proto.monitor import Monitor
+from app.db.manager import DbManager
+from app.monitor import Monitor
 
 HOME_DIR = str(Path.home())
 VIDEOS_DIR = F"{HOME_DIR}/pam_demo"

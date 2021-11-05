@@ -5,9 +5,9 @@ from typing import Iterable, List, Set
 
 from PyQt5.QtCore import QFileSystemWatcher
 
-from proto.db.manager import DbManager
-from proto.db.types import *
-from proto.monitor.dumper import get_data
+from app.db.manager import DbManager
+from app.db.types import *
+from app.monitor.dumper import get_data
 
 class Monitor:
 

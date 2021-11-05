@@ -3,8 +3,8 @@
 import logging
 import sys
 from PyQt5.QtCore import QCoreApplication
-from proto.config.configuration import get_user_config
-from proto.monitor.server import Server
+from app.config.configuration import get_user_config
+from app.monitor.server import Server
 
 USR_CFG = get_user_config() 
 LOGGING_CFG : dict = USR_CFG['logging']

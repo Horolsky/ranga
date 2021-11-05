@@ -1,91 +1,73 @@
-# pam
+# ffindex prototype
 
+[__TOC__]
 
+`ffindex` is a prototype of PAM application, implemented with Python and PyQt.  
+The purpose of the prototype is to provide a CLI for the basic functionality of the desired application.
 
-## Getting started
+## Application design
+under the hood the `ffindex` functionality is split between the `client` and `monitor` modules.  
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+`monitor` module is responsible for indexation of the local file system and updating the database.  
+Retrieving metadata from the files is the scope of [app.monitor.dumper](indexer/monitor/dumper.py) module.  
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+`client` module delivers the basic CLI, including the `monitor` control commands (`run`, `stop`, `port`, `status`, `update`).  
+Other functionality includes retrieving data from the database with commands like `tables`, `show` and `search`, and
+managing directory watchlist with `monitor` `add` and `remove` commands.
 
-## Add your files
+`add` and `remove` commands are are handled by the `monitor` server, or, if it is offline, by the `client` app,  
+which operates directly on database in this case, but without recursive update and metadata extracting.  
+`monitor` `update` command cannot be executed without launching server.
 
-- [ ] [Create](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## CLI design
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/gl-basecamp/21q2/projects/pam.git
-git branch -M main
-git push -uf origin main
-```
+ffindex CLI implemented using `argparse` library.   
+CLI codegeneration source: [cli_schema.yml](indexer/client/cli_schema.yml)
 
-## Integrate with your tools
+### comprehensive CLI tree
+ffindexer subcommands and options
 
-- [ ] [Set up project integrations](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/integrations/)
+ - **search**: search metadata by keyword
+    - **keywords**: filenames, metadata values
+    - **category**: specific categories by which to search (filename, path, <metadata key>)
+    - **exact**: search only for whole word matches
+    - **mode**: sqlite3 output mode (csv, column, html, line, list)
+    - **headless**: exclude header from the output
+ - **show**: show table from database
+    - **table**: database table or view
+    - **mode**: sqlite3 output mode (csv, column, html, line, list)
+    - **headless**: exclude header from the output
+ - **tables**: list table names
+ - **monitor**: local file system monitor server
+    - **list**: list watched root dirs 
+    - **add**: add directory to the watchlist
+    - **remove**: remove directory from the watchlist
+    - **update**: update file records in database
+    - **run**: run monitor server
+    - **stop**: stop monitor server
+    - **port**: get/set port number
+    - **status**: show monitor server status
 
-## Collaborate with your team
+## Monitor - DB communication 
 
-- [ ] [Invite team members and collaborators](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Automatically merge when pipeline succeeds](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+![monitor-db communication schema](docs/proc-monitor-db.png)
 
-## Test and Deploy
+## DB schema
 
-Use the built-in continuous integration in GitLab.
+db schema is designed as a polymorphic (i. e. attribute agnostic) 3-dimensional data registry.  
+The only hardcoded attributes are the fields `path` and `modified` in the `Files` table.  
+Metadata is stored in 3 tables:
+ - MetaKeys:  stores metadata keys as objects
+ - MetaData:  metadata key-to-value mapping
+ - MetaMap:   file-to-metadata mapping  
 
-- [ ] [Get started with GitLab CI/CD](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://docs.gitlab.com/ee/user/clusters/agent/)
+Advantages over the hardcoded table:
+ - correct handling of list records (e. g. for keys like `author`, `genre`, `category`), which is not supported in SQLite     
+ - flexible structure, db module is independent from metadata attributes
 
-***
+![db schema diagram](docs/ffindex-db-schema.drawio.svg)
 
-# Editing this README
+## demo files
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://gitlab.com/-/experiment/new_project_readme_content:91a66dd4075b45b47fb5e6ce603bf144?https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
-
+To download media assets for testing, run [scripts/get_media.sh](scripts/get_media.sh)  
+You can add new asset urls to [scripts/links.txt](scripts/links.txt)  

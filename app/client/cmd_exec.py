@@ -6,9 +6,9 @@ from typing import Callable
 
 from multiprocessing.connection import Client
 
-from proto.monitor.application import main as monitor_run
-from proto.monitor.server import HOST, PORT
-from proto.db.manager import DbManager
+from app.monitor.application import main as monitor_run
+from app.monitor.server import HOST, PORT
+from app.db.manager import DbManager
 
 TIMEOUT = 1000
 

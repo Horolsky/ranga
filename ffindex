@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
 
 import sys
-from proto.client.application import main
+from app.client.application import main
 sys.exit(main())
