@@ -7,12 +7,12 @@ SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 REPO_DIR="$( dirname "$SCRIPT_DIR" )"
 DEMO_DIR="$REPO_DIR/demo_assets"
 
-APP_DATA="$HOME/.ffindex"
+APP_DATA="$HOME/.ranga"
 DATABASE="$APP_DATA/index.db"
 
-FFINDEX="$REPO_DIR/ffindex"
+RANGA="$REPO_DIR/ranga"
 
-# TESTLOG=$(mktemp /tmp/ffindex-test.log)
+# TESTLOG=$(mktemp /tmp/ranga-test.log)
 # writing >&3
 # exec 3>"$TESTLOG"
 # reading <&4
@@ -31,47 +31,47 @@ if [ ! -d "$DEMO_DIR" ]; then
 fi
  
 TEST_CASE_1() {
-    # echo $($FFINDEX monitor -r)
-    echo $($FFINDEX monitor --status )
+    # echo $($RANGA monitor -r)
+    echo $($RANGA monitor --status )
 }
 
 TEST_CASE_2() {
-    # echo "ffindex monitor -s"
-    # echo "ffindex monitor --add $DEMO_DIR"
-    $FFINDEX monitor --add $DEMO_DIR > /dev/null 2>&1
-    LINES=$( $FFINDEX monitor --list | grep "$DEMO_DIR" -c )
+    # echo "ranga monitor -s"
+    # echo "ranga monitor --add $DEMO_DIR"
+    $RANGA monitor --add $DEMO_DIR > /dev/null 2>&1
+    LINES=$( $RANGA monitor --list | grep "$DEMO_DIR" -c )
     (( $LINES > 0)) && echo "PASSED" || echo "FAILED"
 }
 
 TEST_CASE_3() {
-    LINES=$( $FFINDEX search -k "Deutsch" | wc -l )
+    LINES=$( $RANGA search -k "Deutsch" | wc -l )
     (($LINES > 0)) && echo "PASSED" || echo "FAILED"
 }
 
 TEST_CASE_4() {
     mkdir -p "$REPO_DIR/temp" 
-    $FFINDEX monitor -a "$REPO_DIR/temp" > /dev/null 2>&1
+    $RANGA monitor -a "$REPO_DIR/temp" > /dev/null 2>&1
 
     mkdir -p "$REPO_DIR/temp/deep/nested"
     touch "$REPO_DIR/temp/deep/nested/lol.txt"
 
-    LINES1=$( $FFINDEX search -k lol | wc -l )
+    LINES1=$( $RANGA search -k lol | wc -l )
 
     rm -rf "$REPO_DIR/temp/deep"
     sleep 1
-    LINES2=$( $FFINDEX search -k lol | grep lol -c )
+    LINES2=$( $RANGA search -k lol | grep lol -c )
     (($LINES1 > 0 && $LINES2 == 0)) && echo "PASSED" || echo "FAILED"
 }
 
 CLEANUP() {
-    $FFINDEX monitor --stop
+    $RANGA monitor --stop
     rm $DATABASE > /dev/null 2>&1
 }
 
-echo "Running ffindex tests..."
+echo "Running ranga tests..."
 
 CLEANUP
-$FFINDEX monitor -r
+$RANGA monitor -r
 for N in {1..4};
 do
     echo

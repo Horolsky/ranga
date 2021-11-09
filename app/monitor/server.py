@@ -8,7 +8,6 @@ from app.db.manager import DbManager
 from app.monitor import Monitor
 
 HOME_DIR = str(Path.home())
-VIDEOS_DIR = F"{HOME_DIR}/pam_demo"
 HOST = '127.0.0.1'
 PORT = 8000
 

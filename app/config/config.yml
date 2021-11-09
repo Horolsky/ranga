@@ -1,13 +1,13 @@
 logging:
   # style: '{'
   level: DEBUG
-  filename: ffindex.log
+  filename: ranga.log
   format: '%(asctime)s-%(process)d-%(levelname)s-%(message)s'
   datefmt: '%d-%b-%y %H:%M:%S'
 env:
-  - name: FFINDEX_DATA
-    default: $HOME/.ffindex
-  - name: FFINDEX_DB
-    default: $HOME/.ffindex/index.db
-  - name: FFINDEX_PORT
+  - name: RANGA_DATA
+    default: $HOME/.ranga
+  - name: RANGA_DB
+    default: $HOME/.ranga/index.db
+  - name: RANGA_PORT
     default: 8000

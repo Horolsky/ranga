@@ -10,7 +10,7 @@ CFG_FILE_NAME = "/config.yml"
 CONFIG_TEMPLATE = SCRIPT_DIR + CFG_FILE_NAME
 
 HOME_DIR = str(Path.home())
-USR_CFG_DIR = f"{HOME_DIR}/.config/ffindex"
+USR_CFG_DIR = f"{HOME_DIR}/.config/ranga"
 USR_CFG_FILE = USR_CFG_DIR + CFG_FILE_NAME
 
 def get_config_template() -> dict:

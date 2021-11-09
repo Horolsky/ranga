@@ -1,31 +1,31 @@
-# ffindex prototype
+# ranga prototype
 
-[__TOC__]
+[[__TOC__]]
 
-`ffindex` is a prototype of PAM application, implemented with Python and PyQt.  
-The purpose of the prototype is to provide a CLI for the basic functionality of the desired application.
+**ranga** is a CLI application for local file indexation and metadata management.
+Current prototype is implemented with Python and PyQt.  
 
 ## Application design
-under the hood the `ffindex` functionality is split between the `client` and `monitor` modules.  
+under the hood the prototype functionality is split between the **client** and **monitor** modules.  
 
-`monitor` module is responsible for indexation of the local file system and updating the database.  
+**monitor** module is responsible for indexation of the local file system and updating the database.  
 Retrieving metadata from the files is the scope of [app.monitor.dumper](indexer/monitor/dumper.py) module.  
 
-`client` module delivers the basic CLI, including the `monitor` control commands (`run`, `stop`, `port`, `status`, `update`).  
-Other functionality includes retrieving data from the database with commands like `tables`, `show` and `search`, and
-managing directory watchlist with `monitor` `add` and `remove` commands.
+**client** module delivers the basic CLI, including the **monitor** control commands (**run**, **stop**, **port**, **status**, **update**).  
+Other functionality includes retrieving data from the database with commands like **tables**, **show** and **search**, and
+managing directory watchlist with **monitor** **add** and **remove** commands.
 
-`add` and `remove` commands are are handled by the `monitor` server, or, if it is offline, by the `client` app,  
+**add** and **remove** commands are are handled by the **monitor** server, or, if it is offline, by the **client** app,  
 which operates directly on database in this case, but without recursive update and metadata extracting.  
-`monitor` `update` command cannot be executed without launching server.
+**monitor** **update** command cannot be executed without launching server.
 
 ## CLI design
 
-ffindex CLI implemented using `argparse` library.   
-CLI codegeneration source: [cli_schema.yml](indexer/client/cli_schema.yml)
+CLI is implemented using **argparse** library.   
+CLI generation source: [cli_schema.yml](indexer/client/cli_schema.yml)
 
 ### comprehensive CLI tree
-ffindexer subcommands and options
+application subcommands and options
 
  - **search**: search metadata by keyword
     - **keywords**: filenames, metadata values
@@ -55,17 +55,17 @@ ffindexer subcommands and options
 ## DB schema
 
 db schema is designed as a polymorphic (i. e. attribute agnostic) 3-dimensional data registry.  
-The only hardcoded attributes are the fields `path` and `modified` in the `Files` table.  
+The only hardcoded attributes are the fields **path** and **modified** in the **Files** table.  
 Metadata is stored in 3 tables:
  - MetaKeys:  stores metadata keys as objects
  - MetaData:  metadata key-to-value mapping
  - MetaMap:   file-to-metadata mapping  
 
 Advantages over the hardcoded table:
- - correct handling of list records (e. g. for keys like `author`, `genre`, `category`), which is not supported in SQLite     
+ - correct handling of list records (e. g. for keys like **author**, **genre**, **category**), which is not supported in SQLite     
  - flexible structure, db module is independent from metadata attributes
 
-![db schema diagram](docs/ffindex-db-schema.drawio.svg)
+![db schema diagram](docs/db-schema.drawio.svg)
 
 ## demo files
 

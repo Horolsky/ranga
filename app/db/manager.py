@@ -12,8 +12,8 @@ from app.db.types import *
 
 SCRIPT_DIR = dirname(realpath(__file__))
 HOME_DIR = str(Path.home())
-APP_DATA = f'{HOME_DIR}/.ffindex'
-DB_PATH = f'{HOME_DIR}/.ffindex/index.db' #TODO move this to yml config
+APP_DATA = f'{HOME_DIR}/.ranga'
+DB_PATH = f'{HOME_DIR}/.ranga/index.db' #TODO move this to yml config
 DB_SCHEMA = f'{SCRIPT_DIR}/schema.sql'
 
 

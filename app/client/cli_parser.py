@@ -4,8 +4,8 @@ import yaml
 from os.path import dirname, realpath 
 
 INFO = {
-    "prog": "ffindex",
-    "description": "local media file indexer",
+    "prog": "ranga",
+    "description": "local file indexer and metadata manager",
 } 
 SCRIPT_DIR = dirname(realpath(__file__))
 COMMANDS_FILE = SCRIPT_DIR + "/cli_schema.yml"
