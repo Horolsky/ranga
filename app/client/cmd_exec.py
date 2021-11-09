@@ -7,7 +7,7 @@ from typing import Callable
 from multiprocessing.connection import Client
 
 from app.monitor.application import main as monitor_run
-from app.monitor.server import HOST, PORT
+from app.monitor.server import get_port, get_host
 from app.db.manager import DbManager
 
 TIMEOUT = 1000
@@ -20,7 +20,9 @@ def run_fork_proc(entry: Callable):
 def serv_is_running() -> bool:
     import socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex((HOST, PORT)) == 0
+        host = get_host()
+        port = get_port()
+        return s.connect_ex((host, port)) == 0
 
 def exec_search(**kwargs):
     logging.debug(f"indexer: search call, args={str(kwargs)}")
@@ -64,19 +66,19 @@ def exec_monitor(**kwargs):
 
     elif cmd == 'port':
         if arg == 'get':
-            print(PORT)
+            print(get_port())
         #TODO: move port number to env
 
     elif cmd == 'status':
         running = serv_is_running()
-        port = PORT
+        port = get_port()
         print(f"server running: {running}, port: {port}")
 
     elif cmd == 'run':
         run_fork_proc(monitor_run)
 
     elif cmd == 'stop':
-        conn = Client((HOST, PORT))
+        conn = Client((get_host(), get_port()))
         req_obj = bytes(json.dumps({ "command": "stop", "args": True }), encoding='ascii')
         logging.debug(f"indexer req_obj: {req_obj}")
         conn.send_bytes(req_obj)
@@ -87,7 +89,7 @@ def exec_monitor(**kwargs):
         if serv_is_running():
             req_obj = bytes(json.dumps({ "command": cmd, "args": list(paths) }), encoding='ascii')
             logging.debug(f"indexer req_obj: {req_obj}")
-            conn = Client((HOST, PORT))
+            conn = Client((get_host(), get_port()))
             conn.send_bytes(req_obj)
             conn.close()
         elif cmd == 'add':

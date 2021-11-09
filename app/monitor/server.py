@@ -3,16 +3,27 @@ from pathlib import Path
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtNetwork import QHostAddress, QTcpServer
 import json
+from os import makedirs
+from os.path import isdir
 
 from app.db.manager import DbManager
 from app.monitor import Monitor
 
 HOME_DIR = str(Path.home())
+CONFIG_DIR = f"{HOME_DIR}/.config/ranga"
 HOST = '127.0.0.1'
-PORT = 8000
+PORT = 0
+
+
+def get_port():
+    f = open(f"{CONFIG_DIR}/PORT", 'r')
+    port = f.read()
+    f.close()
+    return int(port)
+def get_host():
+    return HOST
 
 class Server(QObject):
-
     def __init__(self):
         logging.debug("monitor: start server initialisation")
         super().__init__()
@@ -21,14 +32,22 @@ class Server(QObject):
         self.tcp_server = QTcpServer(self)        
         address = QHostAddress(HOST)
         if not self.tcp_server.listen(address, PORT):
-            errmsg = f'could not establish connection on port {PORT}'
+            errmsg = 'could not establish connection'
             logging.error(errmsg)
             raise ConnectionError(errmsg)
+            
+        port = self.tcp_server.serverPort()
+        if not isdir(CONFIG_DIR):
+            makedirs(CONFIG_DIR)
+        f = open(f"{CONFIG_DIR}/PORT", 'w')
+        f.write(str(port))
+        f.close()
+
         self.tcp_server.newConnection.connect(self.on_connect)
-        
+
         dirs_to_watch = self.db.get_root_dirs()
         self.monitor = Monitor(self.db)
-        logging.info("monitor: server launched")
+        logging.info(f"monitor: server launched on port {port}")
         self.monitor.update(dirs_to_watch)
         logging.info("monitor: initial update done")
 
