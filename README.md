@@ -1,6 +1,6 @@
 # ranga prototype
 
-[[__TOC__]]
+[[_TOC_]]
 
 **ranga** is a CLI application for local file indexation and metadata management.
 Current prototype is implemented with Python and PyQt.  
